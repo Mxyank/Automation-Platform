@@ -1,0 +1,91 @@
+# ============================================
+# CloudForge DevOps Platform - Docker Compose
+# Development environment with all services
+# ============================================
+
+version: '3.8'
+
+services:
+  # Main Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: cloudforge-app
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DATABASE_URL=postgresql://neondb_owner:npg_6Vz9XDopxFsy@ep-long-cake-a4dzmsmp-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - REDIS_URL=redis://redis:6379
+      - SESSION_SECRET=${SESSION_SECRET:-aoscowmfcwhuefimweigfcwnigfchquwuncwgegfwygwcncywgcnwy}
+    env_file:
+      - .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - cloudforge-network
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: cloudforge-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=cloudforge
+      - POSTGRES_PASSWORD=cloudforge123
+      - POSTGRES_DB=cloudforge
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudforge -d cloudforge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cloudforge-network
+
+  # Redis Cache (Optional but recommended)
+  redis:
+    image: redis:7-alpine
+    container_name: cloudforge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - cloudforge-network
+
+  # Database Admin UI (Optional - for development)
+  adminer:
+    image: adminer:latest
+    container_name: cloudforge-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - cloudforge-network
+    profiles:
+      - admin
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  cloudforge-network:
+    driver: bridge

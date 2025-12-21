@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+server/public/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.docker
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Vite
+vite.config.ts.*
+
+# Docker
+*.tar.gz
+
+# Testing/Debug
+sonar-metrics.json
+coverage/
+
+# Misc
+*.bak
+*.tmp
