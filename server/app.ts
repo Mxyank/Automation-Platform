@@ -1,6 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { log } from "./vite";
+import { log } from "./utils";
 import { logger } from "./logger";
 import { redis } from "./redis";
 
@@ -33,7 +33,7 @@ export async function createApp() {
         }
 
         log(logLine);
-        
+
         // Enhanced logging with new logger
         const userId = (req as any).user?.id;
         logger.access(req.method, path, res.statusCode, duration, userId, capturedJsonResponse);
@@ -54,7 +54,7 @@ export async function createApp() {
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-    
+
     // Log the error
     const userId = (req as any).user?.id;
     logger.error(`${req.method} ${req.path} - ${message}`, err, userId);

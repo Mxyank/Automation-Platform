@@ -3,7 +3,8 @@ import 'dotenv/config';
 // Load environment variables from .env file
 dotenv.config();
 
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, serveStatic } from "./vite";
+import { log } from "./utils";
 import { createApp } from "./app";
 
 (async () => {
