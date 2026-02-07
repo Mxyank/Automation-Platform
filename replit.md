@@ -171,7 +171,7 @@ Key files:
 ## External Dependencies
 
 ### Core Dependencies
-- **@neondatabase/serverless**: PostgreSQL database client
+- **pg**: PostgreSQL database client (node-postgres)
 - **drizzle-orm**: Type-safe database ORM
 - **passport**: Authentication middleware with local and Google OAuth strategies
 - **passport-google-oauth20**: Google OAuth integration
