@@ -1,5 +1,4 @@
 
-import { createApp } from "../server/app";
 import { type Request, type Response } from "express";
 
 let appCache: any = null;
@@ -8,6 +7,9 @@ let appCache: any = null;
 export default async function handler(req: Request, res: Response) {
     try {
         if (!appCache) {
+            // Use dynamic import to catch initialization errors (e.g. DB connection issues)
+            // that happen at module level
+            const { createApp } = await import("../server/app");
             const { app } = await createApp();
             appCache = app;
         }
