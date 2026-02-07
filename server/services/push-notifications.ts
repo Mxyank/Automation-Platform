@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:support@cloudforge.dev';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:support@prometix.dev';
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(

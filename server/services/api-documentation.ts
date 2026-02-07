@@ -825,8 +825,8 @@ export function getApiDocumentation(): ApiEndpointDoc[] {
 export function generatePostmanCollection(): any {
   const collection = {
     info: {
-      name: "CloudForge DevOps Platform API",
-      description: "Complete API documentation for the CloudForge DevOps Platform - A comprehensive SaaS solution for Backend-as-a-Service, DevOps automation, and AI-powered assistance.",
+      name: "Prometix DevOps Platform API",
+      description: "Complete API documentation for the Prometix DevOps Platform - A comprehensive SaaS solution for Backend-as-a-Service, DevOps automation, and AI-powered assistance.",
       version: "1.0.0",
       schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
@@ -896,7 +896,7 @@ export function generatePostmanCollection(): any {
 }
 
 export function generateTechnicalDocumentation(): string {
-  const doc = `# CloudForge DevOps Platform - Technical Documentation
+  const doc = `# Prometix DevOps Platform - Technical Documentation
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -913,7 +913,7 @@ export function generateTechnicalDocumentation(): string {
 
 ## Overview
 
-CloudForge is a comprehensive DevOps Platform that combines Backend-as-a-Service capabilities with AI-powered DevOps automation. It provides developers with tools for code generation, infrastructure management, and intelligent assistance.
+Prometix is a comprehensive DevOps Platform that combines Backend-as-a-Service capabilities with AI-powered DevOps automation. It provides developers with tools for code generation, infrastructure management, and intelligent assistance.
 
 ### Key Features
 - **Backend-as-a-Service**: Generate complete APIs with authentication and database integration
@@ -929,7 +929,7 @@ CloudForge is a comprehensive DevOps Platform that combines Backend-as-a-Service
 
 \`\`\`
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         CloudForge Platform                          │
+│                         Prometix Platform                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌───────────────┐  ┌───────────────┐  ┌───────────────────────┐   │
 │  │   Frontend    │  │   Backend     │  │    External Services  │   │
@@ -1178,8 +1178,8 @@ CloudForge is a comprehensive DevOps Platform that combines Backend-as-a-Service
 
 \`\`\`bash
 # 1. Clone the repository
-git clone https://github.com/your-org/cloudforge.git
-cd cloudforge
+git clone https://github.com/your-org/prometix.git
+cd prometix
 
 # 2. Install dependencies
 npm install
@@ -1260,7 +1260,7 @@ For technical support or questions:
 ---
 
 *Generated on ${new Date().toISOString()}*
-*CloudForge DevOps Platform v1.0.0*
+*Prometix DevOps Platform v1.0.0*
 `;
 
   return doc;

@@ -216,7 +216,7 @@ export default function FeaturesPage() {
               Everything You Need to Build & Deploy
             </h1>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              CloudForge provides a complete suite of DevOps tools powered by AI to accelerate your development workflow.
+              Prometix provides a complete suite of DevOps tools powered by AI to accelerate your development workflow.
             </p>
           </motion.div>
 
@@ -293,7 +293,7 @@ export default function FeaturesPage() {
             >
               <div>
                 <h2 className="text-3xl font-bold text-white mb-2">Upcoming Features</h2>
-                <p className="text-gray-400">Coming soon to CloudForge</p>
+                <p className="text-gray-400">Coming soon to Prometix</p>
               </div>
               <Badge className="bg-neon-purple/20 text-neon-purple border-neon-purple/50">
                 <Clock className="w-3 h-3 mr-1" />
@@ -347,7 +347,7 @@ export default function FeaturesPage() {
             <Card className="bg-gradient-to-r from-neon-cyan/10 to-neon-purple/10 border-gray-800 p-8">
               <h3 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h3>
               <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-                Join thousands of developers using CloudForge to automate their DevOps workflows and ship faster.
+                Join thousands of developers using Prometix to automate their DevOps workflows and ship faster.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/auth">

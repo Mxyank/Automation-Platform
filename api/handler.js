@@ -1125,7 +1125,7 @@ function setupAuth(app) {
     if (redis.isConnected() && redis.getClient()) {
       sessionStore = new RedisStore({
         client: redis.getClient(),
-        prefix: "cloudforge:sess:"
+        prefix: "prometix:sess:"
       });
       logger.info("Using Redis session store");
     } else {
@@ -2727,7 +2727,7 @@ var init_push_notifications = __esm({
     init_schema();
     VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
     VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
-    VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:support@cloudforge.dev";
+    VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:support@prometix.dev";
     if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
       webpush.setVapidDetails(
         VAPID_SUBJECT,
@@ -3035,8 +3035,8 @@ function getApiDocumentation() {
 function generatePostmanCollection() {
   const collection = {
     info: {
-      name: "CloudForge DevOps Platform API",
-      description: "Complete API documentation for the CloudForge DevOps Platform - A comprehensive SaaS solution for Backend-as-a-Service, DevOps automation, and AI-powered assistance.",
+      name: "Prometix DevOps Platform API",
+      description: "Complete API documentation for the Prometix DevOps Platform - A comprehensive SaaS solution for Backend-as-a-Service, DevOps automation, and AI-powered assistance.",
       version: "1.0.0",
       schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
@@ -3097,7 +3097,7 @@ function generatePostmanCollection() {
   return collection;
 }
 function generateTechnicalDocumentation() {
-  const doc = `# CloudForge DevOps Platform - Technical Documentation
+  const doc = `# Prometix DevOps Platform - Technical Documentation
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -3114,7 +3114,7 @@ function generateTechnicalDocumentation() {
 
 ## Overview
 
-CloudForge is a comprehensive DevOps Platform that combines Backend-as-a-Service capabilities with AI-powered DevOps automation. It provides developers with tools for code generation, infrastructure management, and intelligent assistance.
+Prometix is a comprehensive DevOps Platform that combines Backend-as-a-Service capabilities with AI-powered DevOps automation. It provides developers with tools for code generation, infrastructure management, and intelligent assistance.
 
 ### Key Features
 - **Backend-as-a-Service**: Generate complete APIs with authentication and database integration
@@ -3130,7 +3130,7 @@ CloudForge is a comprehensive DevOps Platform that combines Backend-as-a-Service
 
 \`\`\`
 \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
-\u2502                         CloudForge Platform                          \u2502
+\u2502                         Prometix Platform                          \u2502
 \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
 \u2502  \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510  \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510   \u2502
 \u2502  \u2502   Frontend    \u2502  \u2502   Backend     \u2502  \u2502    External Services  \u2502   \u2502
@@ -3379,8 +3379,8 @@ CloudForge is a comprehensive DevOps Platform that combines Backend-as-a-Service
 
 \`\`\`bash
 # 1. Clone the repository
-git clone https://github.com/your-org/cloudforge.git
-cd cloudforge
+git clone https://github.com/your-org/prometix.git
+cd prometix
 
 # 2. Install dependencies
 npm install
@@ -3461,7 +3461,7 @@ For technical support or questions:
 ---
 
 *Generated on ${(/* @__PURE__ */ new Date()).toISOString()}*
-*CloudForge DevOps Platform v1.0.0*
+*Prometix DevOps Platform v1.0.0*
 `;
   return doc;
 }
@@ -4575,7 +4575,7 @@ var init_admin = __esm({
       try {
         const collection = generatePostmanCollection();
         res.setHeader("Content-Type", "application/json");
-        res.setHeader("Content-Disposition", "attachment; filename=cloudforge-api-collection.json");
+        res.setHeader("Content-Disposition", "attachment; filename=prometix-api-collection.json");
         res.json(collection);
       } catch (error) {
         console.error("Error generating Postman collection:", error);
@@ -4586,7 +4586,7 @@ var init_admin = __esm({
       try {
         const documentation = generateTechnicalDocumentation();
         res.setHeader("Content-Type", "text/markdown");
-        res.setHeader("Content-Disposition", "attachment; filename=CloudForge-Technical-Documentation.md");
+        res.setHeader("Content-Disposition", "attachment; filename=Prometix-Technical-Documentation.md");
         res.send(documentation);
       } catch (error) {
         console.error("Error generating documentation:", error);
@@ -5892,7 +5892,7 @@ var init_sonar_service = __esm({
       constructor() {
         this.sonarUrl = process.env.SONAR_HOST_URL || "http://localhost:9000";
         this.sonarToken = process.env.SONAR_TOKEN || "";
-        this.projectKey = "cloudforge-devops-platform";
+        this.projectKey = "prometix-devops-platform";
       }
       async runAnalysis() {
         try {
@@ -6671,7 +6671,7 @@ function generateSnowflakeSetup(config) {
   const sections = [];
   sections.push(`-- ============================================================
 -- Snowflake Data Warehouse Setup Script
--- Generated by CloudForge DevOps Platform
+-- Generated by Prometix DevOps Platform
 -- Account: ${accountName || "<YOUR_ACCOUNT>"}
 -- Region: ${region} (${cloudProvider?.toUpperCase() || "AWS"})
 -- Generated: ${(/* @__PURE__ */ new Date()).toISOString()}
@@ -6688,7 +6688,7 @@ USE ROLE ACCOUNTADMIN;
 
 CREATE DATABASE IF NOT EXISTS ${databaseName || "ANALYTICS_DB"}
   DATA_RETENTION_TIME_IN_DAYS = ${enableTimeTravel || 1}
-  COMMENT = 'Main analytics database created by CloudForge';
+  COMMENT = 'Main analytics database created by Prometix';
 
 USE DATABASE ${databaseName || "ANALYTICS_DB"};
 
@@ -6716,7 +6716,7 @@ USE SCHEMA ${schemaName || "PUBLIC"};
 CREATE WAREHOUSE IF NOT EXISTS ${warehouseName || "COMPUTE_WH"}
   WITH
     ${warehouseOptions.join("\n    ")}
-  COMMENT = 'Primary compute warehouse created by CloudForge';
+  COMMENT = 'Primary compute warehouse created by Prometix';
 
 -- Create additional warehouses for different workloads (optional)
 CREATE WAREHOUSE IF NOT EXISTS ${warehouseName || "COMPUTE_WH"}_ETL
@@ -6792,7 +6792,7 @@ CREATE USER IF NOT EXISTS ${userName}
   DEFAULT_WAREHOUSE = ${warehouseName || "COMPUTE_WH"}
   DEFAULT_NAMESPACE = ${databaseName || "ANALYTICS_DB"}.${schemaName || "PUBLIC"}
   MUST_CHANGE_PASSWORD = TRUE
-  COMMENT = 'Admin user created by CloudForge';
+  COMMENT = 'Admin user created by Prometix';
 
 -- Grant role to user
 GRANT ROLE ${roleName || "ANALYST_ROLE"}_ADMIN TO USER ${userName};
@@ -6816,7 +6816,7 @@ GRANT ROLE ${roleName || "ANALYST_ROLE"}_ADMIN TO USER ${userName};
 CREATE NETWORK POLICY IF NOT EXISTS ${networkPolicy}
   ALLOWED_IP_LIST = ('0.0.0.0/0')  -- CHANGE THIS TO YOUR CORPORATE IP RANGE
   BLOCKED_IP_LIST = ()
-  COMMENT = 'Network policy created by CloudForge';
+  COMMENT = 'Network policy created by Prometix';
 
 -- To apply network policy to account (requires ACCOUNTADMIN):
 -- ALTER ACCOUNT SET NETWORK_POLICY = ${networkPolicy};
@@ -6832,7 +6832,7 @@ CREATE NETWORK POLICY IF NOT EXISTS ${networkPolicy}
 
 -- Create a share for external data sharing
 CREATE SHARE IF NOT EXISTS ${databaseName || "ANALYTICS_DB"}_SHARE
-  COMMENT = 'Secure data share created by CloudForge';
+  COMMENT = 'Secure data share created by Prometix';
 
 -- Grant privileges to share
 GRANT USAGE ON DATABASE ${databaseName || "ANALYTICS_DB"} TO SHARE ${databaseName || "ANALYTICS_DB"}_SHARE;
@@ -7045,7 +7045,7 @@ function generateAirflowDAG(config) {
   sections.push(`"""
 ${description || `Airflow DAG: ${dagId}`}
 
-Generated by CloudForge DevOps Platform
+Generated by Prometix DevOps Platform
 Generated: ${(/* @__PURE__ */ new Date()).toISOString()}
 
 DAG ID: ${dagId}
@@ -8625,7 +8625,7 @@ Provide comprehensive database optimization analysis in JSON:
         const response2 = await fetch(url, {
           method: "GET",
           headers: {
-            "User-Agent": "CloudForge-Monitor/1.0 (Website Analyzer)",
+            "User-Agent": "Prometix-Monitor/1.0 (Website Analyzer)",
             "Accept": "text/html,application/xhtml+xml"
           },
           signal: controller.signal,
@@ -9536,7 +9536,7 @@ Return JSON with this structure:
         return res.status(400).json({ error: "Message too long (max 2000 characters)" });
       }
       const gemini = await Promise.resolve().then(() => (init_gemini(), gemini_exports));
-      const systemPrompt = `You are CloudForge AI Assistant, a helpful DevOps and cloud infrastructure expert. You help users with:
+      const systemPrompt = `You are Prometix AI Assistant, a helpful DevOps and cloud infrastructure expert. You help users with:
 - DevOps best practices and tooling
 - Docker, Kubernetes, CI/CD pipelines
 - Cloud infrastructure (AWS, GCP, Azure)

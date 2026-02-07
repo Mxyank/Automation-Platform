@@ -32,7 +32,7 @@ const communityLinks = [
     icon: SiDiscord,
     color: "from-indigo-500 to-purple-600",
     members: "10,000+",
-    link: "https://discord.gg/cloudforge",
+    link: "https://discord.gg/prometix",
     cta: "Join Discord"
   },
   {
@@ -41,7 +41,7 @@ const communityLinks = [
     icon: SiSlack,
     color: "from-purple-500 to-pink-500",
     members: "5,000+",
-    link: "https://cloudforge.slack.com",
+    link: "https://prometix.slack.com",
     cta: "Join Slack"
   },
   {
@@ -50,19 +50,19 @@ const communityLinks = [
     icon: Github,
     color: "from-gray-600 to-gray-800",
     members: "8,000+",
-    link: "https://github.com/cloudforge/discussions",
+    link: "https://github.com/prometix/discussions",
     cta: "Visit GitHub"
   }
 ];
 
 const openSourceTools = [
   {
-    name: "CloudForge CLI",
+    name: "Prometix CLI",
     description: "Command-line tool for managing infrastructure and deployments from your terminal.",
     stars: "2.4k",
     forks: "340",
     language: "Go",
-    link: "https://github.com/cloudforge/cli"
+    link: "https://github.com/prometix/cli"
   },
   {
     name: "Pipeline Validator",
@@ -70,7 +70,7 @@ const openSourceTools = [
     stars: "1.8k",
     forks: "210",
     language: "TypeScript",
-    link: "https://github.com/cloudforge/pipeline-validator"
+    link: "https://github.com/prometix/pipeline-validator"
   },
   {
     name: "IaC Linter",
@@ -78,7 +78,7 @@ const openSourceTools = [
     stars: "1.2k",
     forks: "150",
     language: "Python",
-    link: "https://github.com/cloudforge/iac-linter"
+    link: "https://github.com/prometix/iac-linter"
   },
   {
     name: "Secret Detector",
@@ -86,13 +86,13 @@ const openSourceTools = [
     stars: "980",
     forks: "120",
     language: "Rust",
-    link: "https://github.com/cloudforge/secret-detector"
+    link: "https://github.com/prometix/secret-detector"
   }
 ];
 
 const tutorials = [
   {
-    title: "Getting Started with CloudForge",
+    title: "Getting Started with Prometix",
     duration: "15 min read",
     type: "Guide",
     icon: BookOpen
@@ -168,7 +168,7 @@ export default function Community() {
               </h1>
               <p className="text-xl text-gray-400 max-w-3xl mx-auto">
                 Connect with thousands of DevOps engineers, share knowledge, 
-                and help shape the future of CloudForge.
+                and help shape the future of Prometix.
               </p>
             </motion.div>
 
@@ -383,10 +383,10 @@ export default function Community() {
               </h2>
               <div className="flex flex-wrap justify-center gap-4">
                 {[
-                  { icon: Twitter, name: "Twitter", link: "https://twitter.com/cloudforge", color: "hover:bg-blue-500" },
-                  { icon: SiYoutube, name: "YouTube", link: "https://youtube.com/@cloudforge", color: "hover:bg-red-500" },
-                  { icon: SiReddit, name: "Reddit", link: "https://reddit.com/r/cloudforge", color: "hover:bg-orange-500" },
-                  { icon: Github, name: "GitHub", link: "https://github.com/cloudforge", color: "hover:bg-gray-600" },
+                  { icon: Twitter, name: "Twitter", link: "https://twitter.com/prometix", color: "hover:bg-blue-500" },
+                  { icon: SiYoutube, name: "YouTube", link: "https://youtube.com/@prometix", color: "hover:bg-red-500" },
+                  { icon: SiReddit, name: "Reddit", link: "https://reddit.com/r/prometix", color: "hover:bg-orange-500" },
+                  { icon: Github, name: "GitHub", link: "https://github.com/prometix", color: "hover:bg-gray-600" },
                 ].map((social) => (
                   <a key={social.name} href={social.link} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" className={`border-white/20 ${social.color} hover:text-white transition-all`}>
@@ -413,7 +413,7 @@ export default function Community() {
                   connect with like-minded developers, we'd love to have you.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <a href="https://discord.gg/cloudforge" target="_blank" rel="noopener noreferrer">
+                  <a href="https://discord.gg/prometix" target="_blank" rel="noopener noreferrer">
                     <Button size="lg" className="bg-indigo-600 text-white hover:bg-indigo-700" data-testid="button-join-discord">
                       <SiDiscord className="w-5 h-5 mr-2" />
                       Join Discord
@@ -434,7 +434,7 @@ export default function Community() {
         <footer className="bg-dark-card border-t border-dark-border py-12">
           <div className="max-w-7xl mx-auto px-4 text-center">
             <p className="text-gray-400">
-              © 2024 CloudForge. All rights reserved.
+              © 2024 Prometix. All rights reserved.
             </p>
           </div>
         </footer>

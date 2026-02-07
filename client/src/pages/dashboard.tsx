@@ -398,7 +398,7 @@ export default function Dashboard() {
                     </div>
                     <h3 className="text-lg font-medium text-white mb-2">Ready to Launch?</h3>
                     <p className="text-gray-400 mb-6 max-w-sm mx-auto">
-                      Create your first project and start building with CloudForge's powerful DevOps tools
+                      Create your first project and start building with Prometix's powerful DevOps tools
                     </p>
                     <div className="flex flex-wrap gap-3 justify-center">
                       <Link href="/api-generator">

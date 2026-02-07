@@ -364,7 +364,7 @@ router.get("/postman-collection", isAdmin, async (_req, res) => {
     const collection = generatePostmanCollection();
     
     res.setHeader("Content-Type", "application/json");
-    res.setHeader("Content-Disposition", "attachment; filename=cloudforge-api-collection.json");
+    res.setHeader("Content-Disposition", "attachment; filename=prometix-api-collection.json");
     res.json(collection);
   } catch (error) {
     console.error("Error generating Postman collection:", error);
@@ -377,7 +377,7 @@ router.get("/download-docs", isAdmin, async (_req, res) => {
     const documentation = generateTechnicalDocumentation();
     
     res.setHeader("Content-Type", "text/markdown");
-    res.setHeader("Content-Disposition", "attachment; filename=CloudForge-Technical-Documentation.md");
+    res.setHeader("Content-Disposition", "attachment; filename=Prometix-Technical-Documentation.md");
     res.send(documentation);
   } catch (error) {
     console.error("Error generating documentation:", error);

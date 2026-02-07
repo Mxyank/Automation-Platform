@@ -24,9 +24,9 @@ export function Navigation() {
   const [, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [switchUserOpen, setSwitchUserOpen] = useState(false);
-  
+
   const canImpersonate = user && (
-    user.email === PRIMARY_ADMIN_EMAIL || 
+    user.email === PRIMARY_ADMIN_EMAIL ||
     (user as any).canImpersonate
   );
 
@@ -47,19 +47,17 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-neon-cyan to-neon-purple rounded-xl flex items-center justify-center">
-              <Rocket className="w-5 h-5 text-white" />
-            </div>
+            <img src="/logo.png" alt="Prometix" className="w-10 h-10 rounded-xl" />
             <div className="flex flex-col">
               <span className="text-xl font-bold text-white">
-                CloudForge
+                Prometix
               </span>
               <span className="text-xs text-gray-400 -mt-1">
                 AI DevOps Platform
               </span>
             </div>
           </Link>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             <Link href="/features" className="text-gray-300 hover:text-neon-cyan transition-colors duration-200">
@@ -108,7 +106,7 @@ export function Navigation() {
               AI for Cloud
             </Link>
           </div>
-          
+
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
@@ -208,71 +206,71 @@ export function Navigation() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-dark-border">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link 
-                href="/features" 
+              <Link
+                href="/features"
                 className="block px-3 py-2 text-gray-300 hover:text-neon-cyan transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Features
               </Link>
-              <Link 
-                href="/pricing" 
+              <Link
+                href="/pricing"
                 className="block px-3 py-2 text-gray-300 hover:text-neon-cyan transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Pricing
               </Link>
-              <Link 
-                href="/jobs" 
+              <Link
+                href="/jobs"
                 className="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-neon-cyan transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Briefcase className="w-4 h-4" />
                 Jobs & Interview
               </Link>
-              <Link 
-                href="/docs" 
+              <Link
+                href="/docs"
                 className="block px-3 py-2 text-gray-300 hover:text-neon-cyan transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Docs
               </Link>
-              <Link 
-                href="/blog" 
+              <Link
+                href="/blog"
                 className="block px-3 py-2 text-gray-300 hover:text-neon-cyan transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Blog
               </Link>
-              <Link 
-                href="/case-studies" 
+              <Link
+                href="/case-studies"
                 className="block px-3 py-2 text-gray-300 hover:text-neon-cyan transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Case Studies
               </Link>
-              <Link 
-                href="/community" 
+              <Link
+                href="/community"
                 className="block px-3 py-2 text-gray-300 hover:text-neon-cyan transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Community
               </Link>
-              <Link 
-                href="/about" 
+              <Link
+                href="/about"
                 className="block px-3 py-2 text-gray-300 hover:text-neon-cyan transition-colors duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About Us
               </Link>
-              <Link 
-                href="/ai-assistant" 
+              <Link
+                href="/ai-assistant"
                 className="block mx-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium transition-all duration-200"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 AI for Cloud
               </Link>
-              
+
               {user ? (
                 <div className="border-t border-dark-border pt-4 mt-4">
                   <div className="mx-2 bg-dark-card border border-dark-border rounded-lg p-3 mb-3">

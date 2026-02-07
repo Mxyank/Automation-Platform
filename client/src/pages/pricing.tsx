@@ -35,7 +35,7 @@ const pricingPlans = [
     name: "Free",
     price: "₹0",
     period: "forever",
-    description: "Perfect for trying out CloudForge",
+    description: "Perfect for trying out Prometix",
     credits: "2",
     features: [
       "2 free credits on signup",
@@ -376,7 +376,7 @@ export default function PricingPage() {
           {/* Features Comparison */}
           <div className="mb-20">
             <h2 className="text-2xl font-bold text-white text-center mb-8">
-              Why Choose CloudForge?
+              Why Choose Prometix?
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
               {[
@@ -435,7 +435,7 @@ export default function PricingPage() {
               Ready to Get Started?
             </h2>
             <p className="text-gray-400 mb-6">
-              Join thousands of developers using CloudForge to automate their DevOps workflows.
+              Join thousands of developers using Prometix to automate their DevOps workflows.
             </p>
             <Link href="/auth">
               <Button className="bg-neon-cyan text-dark-bg hover:bg-neon-cyan/90 px-8 py-3 text-lg" data-testid="btn-cta-signup">

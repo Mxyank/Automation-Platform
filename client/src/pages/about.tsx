@@ -84,7 +84,7 @@ const values = [
 ];
 
 const milestones = [
-  { year: "2022", event: "CloudForge founded with a vision to democratize DevOps" },
+  { year: "2022", event: "Prometix founded with a vision to democratize DevOps" },
   { year: "2023", event: "Launched AI-powered code generation and raised Series A" },
   { year: "2023", event: "Reached 10,000 developers on the platform" },
   { year: "2024", event: "Expanded to enterprise with 500+ companies onboard" },
@@ -92,7 +92,7 @@ const milestones = [
 ];
 
 const press = [
-  { outlet: "TechCrunch", quote: "CloudForge is revolutionizing how teams approach DevOps automation." },
+  { outlet: "TechCrunch", quote: "Prometix is revolutionizing how teams approach DevOps automation." },
   { outlet: "Forbes", quote: "One of the most promising AI-powered developer tools of 2024." },
   { outlet: "The Verge", quote: "Making enterprise DevOps accessible to teams of all sizes." }
 ];
@@ -138,7 +138,7 @@ export default function About() {
                       <h2 className="text-3xl font-bold text-white mb-4">Our Story</h2>
                       <div className="space-y-4 text-gray-300">
                         <p>
-                          CloudForge was born from frustration. As DevOps engineers, we spent countless 
+                          Prometix was born from frustration. As DevOps engineers, we spent countless 
                           hours writing repetitive YAML files, debugging CI/CD pipelines, and managing 
                           infrastructure across multiple clouds.
                         </p>
@@ -148,7 +148,7 @@ export default function About() {
                           deploying to the cloud was as simple as describing what you want?
                         </p>
                         <p>
-                          That vision became CloudForge - an AI-powered DevOps platform that turns 
+                          That vision became Prometix - an AI-powered DevOps platform that turns 
                           hours of work into minutes, helping teams focus on building products instead 
                           of fighting infrastructure.
                         </p>
@@ -357,7 +357,7 @@ export default function About() {
         <footer className="bg-dark-card border-t border-dark-border py-12">
           <div className="max-w-7xl mx-auto px-4 text-center">
             <p className="text-gray-400">
-              © 2024 CloudForge. All rights reserved.
+              © 2024 Prometix. All rights reserved.
             </p>
           </div>
         </footer>

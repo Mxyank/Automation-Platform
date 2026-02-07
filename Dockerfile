@@ -1,5 +1,5 @@
 # ============================================
-# CloudForge DevOps Platform - Dockerfile
+# Prometix DevOps Platform - Dockerfile
 # Multi-stage build for production deployment
 # ============================================
 

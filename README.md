@@ -1,4 +1,4 @@
-# CloudForge - DevOps Platform
+# Prometix - DevOps Platform
 
 A comprehensive SaaS platform for DevOps, Data Engineering, and Cybersecurity professionals. Features AI-powered tools, code generators, and subscription management.
 
@@ -30,7 +30,7 @@ A comprehensive SaaS platform for DevOps, Data Engineering, and Cybersecurity pr
 ```bash
 # Clone and setup
 git clone <repo-url>
-cd cloudforge
+cd prometix
 cp .env.docker.example .env.docker
 
 # Start services
@@ -84,7 +84,7 @@ docker compose exec app npm run db:push
 ## Project Structure
 
 ```
-cloudforge/
+prometix/
 ├── client/                 # React frontend
 │   └── src/
 │       ├── components/     # UI components

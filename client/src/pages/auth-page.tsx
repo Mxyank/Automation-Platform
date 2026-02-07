@@ -92,7 +92,7 @@ export default function AuthPage() {
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-2xl font-bold text-white">
-                  CloudForge
+                  Prometix
                 </span>
                 <span className="text-xs text-gray-400 -mt-1">
                   AI DevOps Platform
@@ -100,7 +100,7 @@ export default function AuthPage() {
               </div>
             </div>
             <h2 className="text-3xl font-bold text-white mb-2">
-              Welcome to CloudForge
+              Welcome to Prometix
             </h2>
             <p className="text-gray-400">
               Sign in to your account or create a new one to start building
@@ -341,7 +341,7 @@ export default function AuthPage() {
               </span>
             </h1>
             <p className="text-xl text-gray-300 leading-relaxed max-w-lg">
-              Join 10,000+ developers who trust CloudForge for rapid API development, Docker automation, and AI-powered DevOps assistance.
+              Join 10,000+ developers who trust Prometix for rapid API development, Docker automation, and AI-powered DevOps assistance.
             </p>
 
             <div className="space-y-4">

@@ -68,7 +68,7 @@ class SonarService {
   constructor() {
     this.sonarUrl = process.env.SONAR_HOST_URL || 'http://localhost:9000';
     this.sonarToken = process.env.SONAR_TOKEN || '';
-    this.projectKey = 'cloudforge-devops-platform';
+    this.projectKey = 'prometix-devops-platform';
   }
 
   async runAnalysis(): Promise<{ success: boolean; taskId?: string; error?: string }> {

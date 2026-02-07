@@ -65,69 +65,36 @@
     color: #ffffff;
   }
   
-  /* Ensure all text is visible */
+  /* Default heading colors - not !important so they can be overridden */
   h1, h2, h3, h4, h5, h6 {
-    color: #ffffff !important;
-  }
-  
-  p {
-    color: #d1d5db !important;
-  }
-  
-  span {
-    color: inherit;
-  }
-  
-  .text-gray-300 {
-    color: #d1d5db !important;
-  }
-  
-  .text-gray-400 {
-    color: #9ca3af !important;
-  }
-  
-  .text-gray-500 {
-    color: #6b7280 !important;
-  }
-  
-  /* Fix button text visibility */
-  .btn, button {
-    color: inherit;
-  }
-  
-  /* Fix card text visibility */
-  .card-title, .card-content {
     color: #ffffff;
   }
   
-  /* Fix specific element visibility */
-  .text-white {
-    color: #ffffff !important;
+  /* Allow gradient text to work by not forcing color on spans */
+  .bg-clip-text {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
   }
   
-  .text-black {
-    color: #000000 !important;
-  }
-  
-  /* Ensure form inputs are visible */
+  /* Fix form inputs visibility */
   input, textarea, select {
-    color: #ffffff !important;
-    background-color: #1f2937 !important;
+    color: #ffffff;
+    background-color: #1f2937;
   }
   
   input::placeholder, textarea::placeholder {
-    color: #9ca3af !important;
+    color: #9ca3af;
   }
   
   /* Fix label visibility */
   label {
-    color: #d1d5db !important;
+    color: #d1d5db;
   }
   
   /* Fix dropdown and select visibility */
   select option {
-    background-color: #1f2937 !important;
-    color: #ffffff !important;
+    background-color: #1f2937;
+    color: #ffffff;
   }
 }
 

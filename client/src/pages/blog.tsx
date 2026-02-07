@@ -368,7 +368,7 @@ export default function Blog() {
         <footer className="bg-dark-card border-t border-dark-border py-12">
           <div className="max-w-7xl mx-auto px-4 text-center">
             <p className="text-gray-400">
-              © 2024 CloudForge. All rights reserved.
+              © 2024 Prometix. All rights reserved.
             </p>
           </div>
         </footer>

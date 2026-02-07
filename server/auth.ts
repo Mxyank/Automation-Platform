@@ -42,7 +42,7 @@ export function setupAuth(app: Express) {
     if (redis.isConnected() && redis.getClient()) {
       sessionStore = new RedisStore({
         client: redis.getClient(),
-        prefix: "cloudforge:sess:",
+        prefix: "prometix:sess:",
       });
       logger.info('Using Redis session store');
     } else {

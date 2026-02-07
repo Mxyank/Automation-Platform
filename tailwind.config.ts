@@ -44,6 +44,12 @@ export default {
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
+        "neon-cyan": "var(--neon-cyan)",
+        "neon-green": "var(--neon-green)",
+        "neon-purple": "var(--neon-purple)",
+        "dark-bg": "var(--dark-bg)",
+        "dark-card": "var(--dark-card)",
+        "dark-border": "var(--dark-border)",
         chart: {
           "1": "var(--chart-1)",
           "2": "var(--chart-2)",

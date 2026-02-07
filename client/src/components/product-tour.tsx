@@ -30,7 +30,7 @@ interface TourStep {
 
 const tourSteps: TourStep[] = [
   {
-    title: "Welcome to CloudForge!",
+    title: "Welcome to Prometix!",
     description: "Your AI-powered DevOps platform. Let's take a quick tour to help you get started with building backends and automating DevOps workflows.",
     icon: <Rocket className="w-12 h-12 text-neon-cyan" />,
   },
@@ -314,12 +314,12 @@ export function TourWelcomeModal({ isOpen, onStartTour, onSkip }: TourWelcomeMod
 
             {/* Title */}
             <h2 className="text-2xl font-bold text-white mb-3" data-testid="text-welcome-title">
-              Welcome to CloudForge!
+              Welcome to Prometix!
             </h2>
 
             {/* Description */}
             <p className="text-gray-300 mb-8">
-              Would you like a quick tour of the platform? It only takes a minute and will help you get the most out of CloudForge.
+              Would you like a quick tour of the platform? It only takes a minute and will help you get the most out of Prometix.
             </p>
 
             {/* Actions */}

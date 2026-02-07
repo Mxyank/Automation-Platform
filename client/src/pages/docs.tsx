@@ -158,7 +158,7 @@ const pricingPlans = [
     name: "Free",
     price: "₹0",
     period: "forever",
-    description: "Perfect for trying out CloudForge",
+    description: "Perfect for trying out Prometix",
     credits: "2",
     features: [
       "2 free credits on signup",
@@ -271,10 +271,10 @@ export default function DocsPage() {
               Documentation
             </Badge>
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              How to Use CloudForge
+              How to Use Prometix
             </h1>
             <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-              Learn how to get the most out of CloudForge's powerful DevOps automation tools.
+              Learn how to get the most out of Prometix's powerful DevOps automation tools.
             </p>
           </motion.div>
 

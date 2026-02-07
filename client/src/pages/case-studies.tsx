@@ -27,14 +27,14 @@ const caseStudies = [
     industry: "SaaS / Cloud Services",
     size: "500+ employees",
     challenge: "Manual CI/CD pipelines took 45+ minutes, causing delayed releases and frustrated developers.",
-    solution: "Implemented CloudForge's Visual Pipeline Builder and AI-powered optimization to automate their entire deployment workflow.",
+    solution: "Implemented Prometix's Visual Pipeline Builder and AI-powered optimization to automate their entire deployment workflow.",
     results: [
       { metric: "50%", label: "Faster Deployments", icon: Rocket },
       { metric: "$2.1M", label: "Annual Savings", icon: DollarSign },
       { metric: "99.9%", label: "Uptime Achieved", icon: CheckCircle2 },
       { metric: "10x", label: "More Releases/Month", icon: TrendingUp }
     ],
-    quote: "CloudForge transformed our DevOps workflow. What used to take our team hours now happens in minutes. The AI suggestions alone saved us countless debugging sessions.",
+    quote: "Prometix transformed our DevOps workflow. What used to take our team hours now happens in minutes. The AI suggestions alone saved us countless debugging sessions.",
     author: "Sarah Chen",
     role: "VP of Engineering",
     color: "from-cyan-500 to-blue-500"
@@ -45,14 +45,14 @@ const caseStudies = [
     industry: "Financial Services",
     size: "2000+ employees",
     challenge: "Complex multi-cloud infrastructure with security compliance requirements and high operational costs.",
-    solution: "Deployed CloudForge's Multi-Cloud Cost Optimizer and Secret Scanner across AWS, GCP, and Azure environments.",
+    solution: "Deployed Prometix's Multi-Cloud Cost Optimizer and Secret Scanner across AWS, GCP, and Azure environments.",
     results: [
       { metric: "40%", label: "Cost Reduction", icon: DollarSign },
       { metric: "Zero", label: "Security Breaches", icon: Shield },
       { metric: "3hrs", label: "Saved Daily", icon: Clock },
       { metric: "100%", label: "Compliance Score", icon: CheckCircle2 }
     ],
-    quote: "The Secret Scanner caught exposed credentials we didn't even know existed. CloudForge paid for itself in the first month.",
+    quote: "The Secret Scanner caught exposed credentials we didn't even know existed. Prometix paid for itself in the first month.",
     author: "Michael Rodriguez",
     role: "CISO",
     color: "from-purple-500 to-pink-500"
@@ -63,7 +63,7 @@ const caseStudies = [
     industry: "Healthcare Technology",
     size: "150+ employees",
     challenge: "Scaling infrastructure to handle 10x patient data growth while maintaining HIPAA compliance.",
-    solution: "Used CloudForge's Blueprint Generator and IaC Autofix to create compliant, auto-scaling infrastructure.",
+    solution: "Used Prometix's Blueprint Generator and IaC Autofix to create compliant, auto-scaling infrastructure.",
     results: [
       { metric: "10x", label: "Scale Achieved", icon: TrendingUp },
       { metric: "75%", label: "Less Downtime", icon: Zap },
@@ -81,7 +81,7 @@ const caseStudies = [
     industry: "Retail / E-Commerce",
     size: "300+ employees",
     challenge: "Black Friday traffic spikes caused outages, losing millions in potential revenue.",
-    solution: "Implemented CloudForge's Deployment Simulator and Auto Infra Cost Estimator for predictive scaling.",
+    solution: "Implemented Prometix's Deployment Simulator and Auto Infra Cost Estimator for predictive scaling.",
     results: [
       { metric: "Zero", label: "Black Friday Outages", icon: CheckCircle2 },
       { metric: "$4.5M", label: "Revenue Protected", icon: DollarSign },
@@ -126,7 +126,7 @@ export default function CaseStudies() {
               </h1>
               <p className="text-xl text-gray-400 max-w-3xl mx-auto">
                 See how leading enterprises transformed their DevOps workflows, 
-                reduced costs, and accelerated deployments with CloudForge.
+                reduced costs, and accelerated deployments with Prometix.
               </p>
             </motion.div>
 
@@ -230,7 +230,7 @@ export default function CaseStudies() {
                   Ready to Write Your Success Story?
                 </h2>
                 <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
-                  Join 500+ enterprises that have transformed their DevOps workflows with CloudForge. 
+                  Join 500+ enterprises that have transformed their DevOps workflows with Prometix. 
                   Start your free trial today and see results in minutes.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -254,7 +254,7 @@ export default function CaseStudies() {
         <footer className="bg-dark-card border-t border-dark-border py-12">
           <div className="max-w-7xl mx-auto px-4 text-center">
             <p className="text-gray-400">
-              © 2024 CloudForge. All rights reserved.
+              © 2024 Prometix. All rights reserved.
             </p>
           </div>
         </footer>

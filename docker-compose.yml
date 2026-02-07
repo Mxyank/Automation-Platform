@@ -1,5 +1,5 @@
 # ============================================
-# CloudForge DevOps Platform - Docker Compose
+# Prometix DevOps Platform - Docker Compose
 # Development environment with all services
 # ============================================
 
@@ -12,7 +12,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: cloudforge-app
+    container_name: prometix-app
     ports:
       - "5002:5002"
     environment:
@@ -30,33 +30,33 @@ services:
         condition: service_started
     restart: unless-stopped
     networks:
-      - cloudforge-network
+      - prometix-network
 
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
-    container_name: cloudforge-db
+    container_name: prometix-db
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=cloudforge
-      - POSTGRES_PASSWORD=cloudforge123
-      - POSTGRES_DB=cloudforge
+      - POSTGRES_USER=prometix
+      - POSTGRES_PASSWORD=prometix123
+      - POSTGRES_DB=prometix
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cloudforge -d cloudforge"]
+      test: ["CMD-SHELL", "pg_isready -U prometix -d prometix"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
     networks:
-      - cloudforge-network
+      - prometix-network
 
   # Redis Cache (Optional but recommended)
   redis:
     image: redis:7-alpine
-    container_name: cloudforge-redis
+    container_name: prometix-redis
     ports:
       - "6379:6379"
     volumes:
@@ -64,19 +64,19 @@ services:
     command: redis-server --appendonly yes
     restart: unless-stopped
     networks:
-      - cloudforge-network
+      - prometix-network
 
   # Database Admin UI (Optional - for development)
   adminer:
     image: adminer:latest
-    container_name: cloudforge-adminer
+    container_name: prometix-adminer
     ports:
       - "8080:8080"
     depends_on:
       - db
     restart: unless-stopped
     networks:
-      - cloudforge-network
+      - prometix-network
     profiles:
       - admin
 
@@ -87,5 +87,5 @@ volumes:
     driver: local
 
 networks:
-  cloudforge-network:
+  prometix-network:
     driver: bridge

@@ -1,6 +1,6 @@
-# CloudForge Deployment Guide
+# Prometix Deployment Guide
 
-Complete step-by-step instructions to deploy CloudForge using Docker.
+Complete step-by-step instructions to deploy Prometix using Docker.
 
 ---
 
@@ -25,7 +25,7 @@ docker compose version
 ### Step 1: Clone the Repository
 ```bash
 git clone <your-repo-url>
-cd cloudforge
+cd prometix
 ```
 
 ### Step 2: Create Environment File
@@ -51,9 +51,9 @@ docker compose -f docker-compose.dev.yml exec app npm run db:push
 - **Database Admin**: http://localhost:8080 (Adminer)
   - System: PostgreSQL
   - Server: db
-  - Username: cloudforge
-  - Password: cloudforge123
-  - Database: cloudforge
+  - Username: prometix
+  - Password: prometix123
+  - Database: prometix
 
 ---
 
@@ -128,7 +128,7 @@ sudo usermod -aG docker $USER
 4. **Clone and deploy**
 ```bash
 git clone <your-repo-url>
-cd cloudforge
+cd prometix
 cp .env.docker.example .env.docker
 nano .env.docker  # Add your production values
 docker compose up -d --build
@@ -148,7 +148,7 @@ sudo ufw enable
 sudo apt install nginx -y
 
 # Create config
-sudo nano /etc/nginx/sites-available/cloudforge
+sudo nano /etc/nginx/sites-available/prometix
 ```
 
 Add this configuration:
@@ -173,7 +173,7 @@ server {
 
 Enable the site:
 ```bash
-sudo ln -s /etc/nginx/sites-available/cloudforge /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/prometix /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 ```
@@ -214,25 +214,25 @@ For enterprise deployments, use Kubernetes:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cloudforge
+  name: prometix
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: cloudforge
+      app: prometix
   template:
     metadata:
       labels:
-        app: cloudforge
+        app: prometix
     spec:
       containers:
-      - name: cloudforge
-        image: your-registry/cloudforge:latest
+      - name: prometix
+        image: your-registry/prometix:latest
         ports:
         - containerPort: 5000
         envFrom:
         - secretRef:
-            name: cloudforge-secrets
+            name: prometix-secrets
         resources:
           limits:
             memory: "512Mi"
@@ -271,12 +271,12 @@ docker compose exec app npm run db:push
 
 ### Backup Database
 ```bash
-docker compose exec db pg_dump -U cloudforge cloudforge > backup_$(date +%Y%m%d).sql
+docker compose exec db pg_dump -U prometix prometix > backup_$(date +%Y%m%d).sql
 ```
 
 ### Restore Database
 ```bash
-cat backup.sql | docker compose exec -T db psql -U cloudforge cloudforge
+cat backup.sql | docker compose exec -T db psql -U prometix prometix
 ```
 
 ### Stop All Services
@@ -305,7 +305,7 @@ docker compose up -d
 ### Database connection issues
 ```bash
 # Verify database is healthy
-docker compose exec db pg_isready -U cloudforge
+docker compose exec db pg_isready -U prometix
 
 # Check database logs
 docker compose logs db

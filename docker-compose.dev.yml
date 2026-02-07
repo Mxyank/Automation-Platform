@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: base
-    container_name: cloudforge-dev
+    container_name: prometix-dev
     ports:
       - "5050:5002"
     environment:
@@ -14,7 +14,7 @@ services:
       # ✅ NEON — IPv4 forced
       DATABASE_URL: postgresql://neondb_owner:npg_a5UrbHK4DeWE@ep-cold-violet-aingm4b9-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true&hostaddr=44.211.114.173
 
-      REDIS_URL: redis://cloudforge-redis:6379
+      REDIS_URL: redis://prometix-redis:6379
       SESSION_SECRET: dev-secret
 
     sysctls:
@@ -28,20 +28,20 @@ services:
     depends_on:
       - redis
     networks:
-      - cloudforge-network
+      - prometix-network
 
   redis:
     image: redis:7-alpine
-    container_name: cloudforge-redis
+    container_name: prometix-redis
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
     networks:
-      - cloudforge-network
+      - prometix-network
 
 volumes:
   redis_data:
 
 networks:
-  cloudforge-network:
+  prometix-network:
     driver: bridge

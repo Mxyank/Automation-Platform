@@ -1577,7 +1577,7 @@ Provide comprehensive database optimization analysis in JSON:
         const response = await fetch(url, {
           method: 'GET',
           headers: {
-            'User-Agent': 'CloudForge-Monitor/1.0 (Website Analyzer)',
+            'User-Agent': 'Prometix-Monitor/1.0 (Website Analyzer)',
             'Accept': 'text/html,application/xhtml+xml',
           },
           signal: controller.signal,
@@ -2670,7 +2670,7 @@ Return JSON with this structure:
 
       const gemini = await import('./services/gemini');
       
-      const systemPrompt = `You are CloudForge AI Assistant, a helpful DevOps and cloud infrastructure expert. You help users with:
+      const systemPrompt = `You are Prometix AI Assistant, a helpful DevOps and cloud infrastructure expert. You help users with:
 - DevOps best practices and tooling
 - Docker, Kubernetes, CI/CD pipelines
 - Cloud infrastructure (AWS, GCP, Azure)

@@ -12,12 +12,12 @@ interface SiteSetting {
   key: string;
   value: boolean;
 }
-import { 
-  Database, 
-  Container, 
-  Brain, 
-  Code, 
-  GitBranch, 
+import {
+  Database,
+  Container,
+  Brain,
+  Code,
+  GitBranch,
   Zap,
   Check,
   Play,
@@ -181,7 +181,7 @@ const CodeBlock = ({ code, title, language = "javascript", className = "", isAct
       // Always start typing animation for Quick Start immediately
       setIsTyping(true);
       setDisplayedCode('');
-      
+
       // Add a small delay before starting typing
       const startDelay = setTimeout(() => {
         let currentIndex = 0;
@@ -244,14 +244,14 @@ export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('quickStart');
   const { scrollY } = useScroll();
-  
+
   // Fetch site settings for Product Hunt badge
   const { data: siteSettings = [] } = useQuery<SiteSetting[]>({
     queryKey: ["/api/site-settings"],
   });
-  
+
   const isProductHuntLive = siteSettings.find(s => s.key === 'producthunt_live')?.value || false;
-  
+
   // Enhanced parallax effects
   const y1 = useTransform(scrollY, [0, 500], [0, 150]);
   const y2 = useTransform(scrollY, [0, 500], [0, -100]);
@@ -268,7 +268,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-dark-bg text-white">
       <Navigation />
-      
+
       {/* Product Hunt Badge - Fixed Position */}
       {isProductHuntLive && (
         <motion.div
@@ -277,9 +277,9 @@ export default function LandingPage() {
           className="fixed right-4 top-24 z-50"
           data-testid="producthunt-badge"
         >
-          <a 
-            href="https://www.producthunt.com/posts/cloudforge" 
-            target="_blank" 
+          <a
+            href="https://www.producthunt.com/posts/prometix"
+            target="_blank"
             rel="noopener noreferrer"
             className="block"
           >
@@ -300,7 +300,7 @@ export default function LandingPage() {
           </a>
         </motion.div>
       )}
-      
+
       {/* Hero Section - Appwrite/Supabase Inspired */}
       <section className="relative min-h-screen flex items-center overflow-hidden pt-[100px]">
         {/* Enhanced Grid Background */}
@@ -315,10 +315,10 @@ export default function LandingPage() {
             <div className="absolute bottom-1/3 right-1/3 w-96 h-96 bg-neon-purple/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
           </motion.div>
         </div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid lg:grid-cols-2 gap-16 items-center py-[100px]">
-            <motion.div 
+            <motion.div
               className="space-y-8 text-center lg:text-left"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -349,13 +349,13 @@ export default function LandingPage() {
                   </span>
                 </h1>
                 <p className="text-xl text-gray-400 leading-relaxed max-w-xl">
-                  Generate complete REST APIs, Docker containers, and CI/CD pipelines in 30 seconds. 
+                  Generate complete REST APIs, Docker containers, and CI/CD pipelines in 30 seconds.
                   AI-powered DevOps platform for modern developers.
                 </p>
               </div>
-              
+
               {/* Stats */}
-              <motion.div 
+              <motion.div
                 className="grid grid-cols-3 gap-6 py-6"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -374,31 +374,31 @@ export default function LandingPage() {
                   <div className="text-sm text-gray-400">APIs Created</div>
                 </div>
               </motion.div>
-              
-              <motion.div 
+
+              <motion.div
                 className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <Button 
+                <Button
                   onClick={handleGetStarted}
                   className="group bg-white text-black hover:bg-gray-100 px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-[1.02]"
                 >
                   Get started for free
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   className="border-gray-700 text-white hover:border-gray-600 px-8 py-3 rounded-lg font-medium transition-all duration-200"
                 >
                   <Github className="mr-2 w-4 h-4" />
                   Star on GitHub
                 </Button>
               </motion.div>
-              
-              <motion.div 
+
+              <motion.div
                 className="flex items-center justify-center lg:justify-start space-x-6 text-sm text-gray-500"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -409,9 +409,9 @@ export default function LandingPage() {
                 <span>✦ Deploy anywhere</span>
               </motion.div>
             </motion.div>
-            
+
             {/* Interactive Code Showcase */}
-            <motion.div 
+            <motion.div
               className="relative"
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -427,10 +427,10 @@ export default function LandingPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setActiveTab(tab)}
-                      className={`${activeTab === tab 
-                        ? 'bg-white text-black' 
+                      className={`${activeTab === tab
+                        ? 'bg-white text-black'
                         : 'text-gray-400 hover:text-white'
-                      } transition-all duration-200 rounded-md px-4 py-2 text-sm font-medium`}
+                        } transition-all duration-200 rounded-md px-4 py-2 text-sm font-medium`}
                     >
                       {tab === 'quickStart' && 'Quick Start'}
                       {tab === 'apiGeneration' && 'API Generation'}
@@ -459,7 +459,7 @@ export default function LandingPage() {
                 </AnimatePresence>
 
                 {/* Feature Tags */}
-                <motion.div 
+                <motion.div
                   className="flex flex-wrap gap-2"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -493,7 +493,7 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <motion.div 
+          <motion.div
             className="text-center mb-20"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -510,10 +510,10 @@ export default function LandingPage() {
               Everything you need to build, deploy, and scale modern applications with AI-powered code generation, DevOps automation, and enterprise-ready infrastructure.
             </p>
           </motion.div>
-          
+
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
             {/* Backend-as-a-Service Feature */}
-            <motion.div 
+            <motion.div
               className="group relative"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -534,7 +534,7 @@ export default function LandingPage() {
                   <p className="text-gray-300 text-lg leading-relaxed">
                     Auto-generate production-ready CRUD APIs with authentication, database integration, and API documentation.
                   </p>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <Check className="w-5 h-5 text-neon-green" />
@@ -566,9 +566,9 @@ app.post('/api/users', auth, ...)
                 </CardContent>
               </Card>
             </motion.div>
-            
+
             {/* DevOps Toolkit Feature */}
-            <motion.div 
+            <motion.div
               className="group relative"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -589,7 +589,7 @@ app.post('/api/users', auth, ...)
                   <p className="text-gray-300 text-lg leading-relaxed">
                     Generate optimized Dockerfiles, docker-compose, CI/CD pipelines, and infrastructure as code.
                   </p>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <Check className="w-5 h-5 text-neon-green" />
@@ -621,9 +621,9 @@ RUN npm ci --only=production`}</code>
                 </CardContent>
               </Card>
             </motion.div>
-            
+
             {/* AI DevOps Assistant Feature */}
-            <motion.div 
+            <motion.div
               className="group relative"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -644,7 +644,7 @@ RUN npm ci --only=production`}</code>
                   <p className="text-gray-300 text-lg leading-relaxed">
                     AI-powered debugging, log analysis, and natural language to infrastructure code conversion.
                   </p>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <Check className="w-5 h-5 text-neon-green" />
@@ -679,7 +679,7 @@ jobs: ...`}</code>
           </div>
 
           {/* Process Flow */}
-          <motion.div 
+          <motion.div
             className="grid md:grid-cols-4 gap-8 mt-20"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -721,7 +721,7 @@ jobs: ...`}</code>
       {/* Pricing Section */}
       <section className="py-32 bg-gradient-to-b from-dark-bg to-dark-card/30 mt-[100px]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
+          <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -776,7 +776,7 @@ jobs: ...`}</code>
                       <span className="text-gray-300">Community support</span>
                     </div>
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleGetStarted}
                     className="w-full bg-gray-700 hover:bg-gray-600 text-white mt-6"
                   >
@@ -906,7 +906,7 @@ jobs: ...`}</code>
               Meet the <span style={{ background: 'linear-gradient(to right, #00f5d4, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Founder</span>
             </h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              The vision behind CloudForge
+              The vision behind Prometix
             </p>
           </motion.div>
 
@@ -920,10 +920,13 @@ jobs: ...`}</code>
             {/* Founder Avatar */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-neon-cyan via-neon-green to-neon-purple rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-500"></div>
-              <div className="relative w-72 h-72 md:w-80 md:h-80 rounded-2xl overflow-hidden border-2 border-gray-700 group-hover:border-neon-cyan/50 transition-all duration-500 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                <div className="text-9xl font-bold text-neon-cyan/50" data-testid="img-founder">
-                  MA
-                </div>
+              <div className="relative w-72 h-72 md:w-80 md:h-80 rounded-2xl overflow-hidden border-2 border-gray-700 group-hover:border-neon-cyan/50 transition-all duration-500">
+                <img
+                  src="/founder.jpg"
+                  alt="Mayank Agrawal - Founder"
+                  className="w-full h-full object-cover"
+                  data-testid="img-founder"
+                />
               </div>
             </div>
 
@@ -932,28 +935,28 @@ jobs: ...`}</code>
               <h3 className="text-3xl font-bold text-white mb-2" data-testid="text-founder-name">Mayank Agrawal</h3>
               <p className="text-neon-cyan font-semibold text-lg mb-4">Founder & CEO</p>
               <p className="text-gray-300 leading-relaxed mb-6">
-                Passionate about simplifying DevOps for developers worldwide. CloudForge was born from the vision of making infrastructure and backend development accessible to everyone through the power of AI.
+                Passionate about simplifying DevOps for developers worldwide. Prometix was born from the vision of making infrastructure and backend development accessible to everyone through the power of AI.
               </p>
               <div className="flex items-center justify-center md:justify-start gap-4">
-                <a 
-                  href="https://linkedin.com/in/mayank-agrawal" 
-                  target="_blank" 
+                <a
+                  href="https://linkedin.com/in/mayank-agrawal"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 bg-gray-800 rounded-xl hover:bg-gray-700 hover:text-neon-cyan transition-all duration-300 group"
                 >
                   <Linkedin className="w-5 h-5 text-gray-400 group-hover:text-neon-cyan" />
                 </a>
-                <a 
-                  href="https://twitter.com/mayank_agrawal" 
-                  target="_blank" 
+                <a
+                  href="https://twitter.com/mayank_agrawal"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 bg-gray-800 rounded-xl hover:bg-gray-700 hover:text-neon-cyan transition-all duration-300 group"
                 >
                   <Twitter className="w-5 h-5 text-gray-400 group-hover:text-neon-cyan" />
                 </a>
-                <a 
-                  href="https://github.com/mayank-agrawal" 
-                  target="_blank" 
+                <a
+                  href="https://github.com/mayank-agrawal"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 bg-gray-800 rounded-xl hover:bg-gray-700 hover:text-neon-cyan transition-all duration-300 group"
                 >
@@ -971,7 +974,7 @@ jobs: ...`}</code>
           <div className="absolute top-1/2 left-1/2 w-[40rem] h-[40rem] bg-gradient-to-r from-neon-cyan/15 via-neon-green/10 to-neon-purple/15 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
           <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-r from-neon-cyan/20 to-transparent rounded-full blur-2xl animate-pulse delay-1000"></div>
           <div className="absolute bottom-10 left-10 w-40 h-40 bg-gradient-to-r from-neon-purple/20 to-transparent rounded-full blur-2xl animate-pulse delay-500"></div>
-          
+
           {/* Floating particles */}
           <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-neon-cyan rounded-full animate-bounce"></div>
           <div className="absolute top-3/4 right-1/4 w-1.5 h-1.5 bg-neon-green rounded-full animate-bounce delay-300"></div>
@@ -994,7 +997,7 @@ jobs: ...`}</code>
               Join thousands of developers building production-ready applications with AI-powered DevOps tools.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
+              <Button
                 onClick={handleGetStarted}
                 className="group bg-gradient-to-r from-neon-cyan via-neon-green to-neon-purple text-dark-bg px-10 py-5 rounded-xl font-semibold text-xl hover:shadow-2xl hover:shadow-neon-cyan/40 transition-all duration-500 flex items-center justify-center space-x-3 hover:scale-110 relative overflow-hidden"
               >
@@ -1002,7 +1005,7 @@ jobs: ...`}</code>
                 <span className="relative">Start Building Now</span>
                 <ArrowRight className="w-6 h-6 relative group-hover:translate-x-2 transition-transform duration-300" />
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 className="group border-2 border-gray-600 text-white px-10 py-5 rounded-xl font-semibold text-xl hover:border-neon-cyan hover:text-neon-cyan hover:shadow-xl hover:shadow-neon-cyan/20 transition-all duration-500 hover:scale-110 relative overflow-hidden"
               >
@@ -1021,11 +1024,9 @@ jobs: ...`}</code>
             {/* Brand Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-neon-cyan to-neon-purple rounded-xl flex items-center justify-center">
-                  <Rocket className="w-5 h-5 text-white" />
-                </div>
+                <img src="/logo.png" alt="Prometix" className="w-10 h-10 rounded-xl" />
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold text-white">CloudForge</span>
+                  <span className="text-xl font-bold text-white">Prometix</span>
                   <span className="text-xs text-gray-400 -mt-1">AI DevOps Platform</span>
                 </div>
               </div>
@@ -1075,7 +1076,7 @@ jobs: ...`}</code>
           <div className="border-t border-gray-800 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="text-gray-400 text-sm">
-                © 2024 CloudForge. All rights reserved.
+                © 2024 Prometix. All rights reserved.
               </div>
               <div className="flex items-center space-x-6 mt-4 md:mt-0">
                 <a href="#" className="text-gray-400 hover:text-neon-cyan transition-colors">
