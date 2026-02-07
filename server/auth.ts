@@ -65,6 +65,7 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
+      sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   };
@@ -80,13 +81,24 @@ export function setupAuth(app: Express) {
       async (email, password, done) => {
         try {
           const user = await storage.getUserByEmail(email);
-          if (!user || !user.password || !(await comparePasswords(password, user.password))) {
-            logger.auth('login', email, false, undefined, 'Invalid credentials');
+          if (!user) {
+            logger.auth('login', email, false, undefined, 'User not found');
             return done(null, false);
-          } else {
-            logger.auth('login', email, true);
-            return done(null, user);
           }
+          
+          if (!user.password) {
+            logger.auth('login', email, false, undefined, 'User has no password (likely OAuth user)');
+            return done(null, false);
+          }
+
+          const isValid = await comparePasswords(password, user.password);
+          if (!isValid) {
+            logger.auth('login', email, false, undefined, 'Invalid password');
+            return done(null, false);
+          }
+
+          logger.auth('login', email, true);
+          return done(null, user);
         } catch (error) {
           logger.error('Authentication error', error);
           return done(error);
@@ -103,8 +115,8 @@ export function setupAuth(app: Express) {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           callbackURL: process.env.REPLIT_DOMAINS 
-            ? `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`
-            : "http://localhost:5000/api/auth/google/callback"
+            ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}/api/auth/google/callback`
+            : "http://localhost:5002/api/auth/google/callback"
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
@@ -185,8 +197,15 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.status(200).json(req.user);
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) return res.status(401).json({ message: "Invalid email or password" });
+      req.login(user, (err) => {
+        if (err) return next(err);
+        return res.status(200).json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
