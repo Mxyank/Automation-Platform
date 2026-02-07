@@ -10,6 +10,7 @@ This application is ready for Vercel deployment.
     - **Build Command**: Set this to `npm run vercel-build`.
     - **Output Directory**: Set this to `dist/public`.
 3. **Environment Variables**: Add all your `.env` variables to Vercel Settings -> Environment Variables.
+    - **Note for OAuth**: Add `GOOGLE_REDIRECT_URL` set to `https://your-domain.com/api/auth/google/callback` (e.g., `https://prometix.tech/api/auth/google/callback`).
 
 ### Important Notes
 - **Database**: Ensure your database (PostgreSQL/Redis) is accessible from the internet.

@@ -75,8 +75,9 @@ docker compose exec app npm run db:push
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `SESSION_SECRET` | Yes | Session encryption key |
-| `GOOGLE_CLIENT_ID` | No | Google OAuth |
-| `GOOGLE_CLIENT_SECRET` | No | Google OAuth |
+| `GOOGLE_CLIENT_ID` | No | Google OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | No | Google OAuth Client Secret |
+| `GOOGLE_REDIRECT_URL` | No | Google OAuth Redirect (e.g. https://prometix.tech/api/auth/google/callback) |
 | `RAZORPAY_KEY_ID` | No | Payment processing |
 | `RAZORPAY_KEY_SECRET` | No | Payment processing |
 | `OPENAI_API_KEY` | No | AI features |
