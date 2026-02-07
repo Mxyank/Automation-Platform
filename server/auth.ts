@@ -15,7 +15,7 @@ import { redis } from "./redis";
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends SelectUser { }
   }
 }
 
@@ -36,6 +36,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   // Use Redis for sessions if available, otherwise fall back to PostgreSQL
+  // Use Redis for sessions if available, otherwise fall back to PostgreSQL, then MemoryStore
   let sessionStore;
   try {
     if (redis.isConnected() && redis.getClient()) {
@@ -47,16 +48,21 @@ export function setupAuth(app: Express) {
     } else {
       throw new Error('Redis not available');
     }
-  } catch (error) {
-    logger.warn('Redis unavailable, falling back to PostgreSQL sessions');
-    const PostgresSessionStore = connectPg(session);
-    sessionStore = new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
-    });
-    logger.info('Using PostgreSQL session store');
+  } catch (redisError) {
+    try {
+      logger.warn('Redis unavailable, falling back to PostgreSQL sessions');
+      const PostgresSessionStore = connectPg(session);
+      sessionStore = new PostgresSessionStore({
+        pool,
+        createTableIfMissing: true
+      });
+      logger.info('Using PostgreSQL session store');
+    } catch (pgError) {
+      logger.error('PostgreSQL session store failed, falling back to MemoryStore', pgError);
+      sessionStore = new session.MemoryStore();
+    }
   }
-  
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "devops-cloud-secret-key",
     resave: false,
@@ -85,7 +91,7 @@ export function setupAuth(app: Express) {
             logger.auth('login', email, false, undefined, 'User not found');
             return done(null, false);
           }
-          
+
           if (!user.password) {
             logger.auth('login', email, false, undefined, 'User has no password (likely OAuth user)');
             return done(null, false);
@@ -114,7 +120,7 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.REPLIT_DOMAINS 
+          callbackURL: process.env.REPLIT_DOMAINS
             ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}/api/auth/google/callback`
             : "http://localhost:5002/api/auth/google/callback"
         },
@@ -128,7 +134,7 @@ export function setupAuth(app: Express) {
 
             // Check if user already exists with this Google ID
             let user = await storage.getUserByGoogleId(profile.id);
-            
+
             if (user) {
               logger.auth('google-login', email, true, String(user.id));
               return done(null, user);
@@ -168,7 +174,7 @@ export function setupAuth(app: Express) {
   app.post("/api/register", async (req, res, next) => {
     try {
       const { username, email, password } = req.body;
-      
+
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         logger.auth('register', email, false, req.ip, 'Email already exists');
@@ -211,7 +217,7 @@ export function setupAuth(app: Express) {
   app.post("/api/logout", (req, res, next) => {
     const userId = (req as any).user?.id;
     const email = (req as any).user?.email;
-    
+
     req.logout((err) => {
       if (err) {
         logger.error('Logout error', err, userId);
@@ -228,7 +234,7 @@ export function setupAuth(app: Express) {
   });
 
   // Google OAuth routes
-  app.get("/api/auth/google", 
+  app.get("/api/auth/google",
     passport.authenticate("google", { scope: ["profile", "email"] })
   );
 
