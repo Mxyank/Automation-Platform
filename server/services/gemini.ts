@@ -1,6 +1,31 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
+const API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+const genAI = new GoogleGenerativeAI(API_KEY || "");
+
+export function isAIConfigured(): boolean {
+  return !!API_KEY;
+}
+
+export function getGeminiModel(modelName: string = "gemini-1.5-flash") {
+  if (!API_KEY) {
+    throw new Error("Gemini API key is not configured. Please set GOOGLE_API_KEY environment variable.");
+  }
+
+  // Use a capable and widely available model ID
+  const modelId = modelName.includes("pro") ? "gemini-1.5-pro" : "gemini-1.5-flash";
+
+  try {
+    // Explicitly set apiVersion to 'v1' to avoid inconsistent behavior across SDK versions
+    return genAI.getGenerativeModel({
+      model: modelId,
+    }, { apiVersion: 'v1' });
+  } catch (error) {
+    console.error(`Error initializing Gemini model ${modelId}:`, error);
+    // Ultimate fallback for very restrictive/old keys
+    return genAI.getGenerativeModel({ model: "gemini-pro" });
+  }
+}
 
 export async function analyzeLogError(logText: string): Promise<{
   problem: string;
@@ -8,8 +33,8 @@ export async function analyzeLogError(logText: string): Promise<{
   confidence: number;
 }> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
+    const model = getGeminiModel("gemini-1.5-flash");
+
     const prompt = `You are an expert DevOps engineer. Analyze the provided log or error message and provide a clear problem description and actionable solution. 
     
 Respond with JSON in this exact format (no markdown, just raw JSON):
@@ -22,14 +47,14 @@ ${logText}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("Could not parse JSON response");
     }
-    
+
     const parsed = JSON.parse(jsonMatch[0]);
-    
+
     return {
       problem: parsed.problem || "Could not identify the problem",
       solution: parsed.solution || "No solution available",
@@ -45,8 +70,8 @@ export async function generateYamlFromNaturalLanguage(description: string): Prom
   explanation: string;
 }> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
+    const model = getGeminiModel("gemini-1.5-flash");
+
     const prompt = `You are an expert in DevOps and CI/CD. Convert natural language descriptions into valid YAML configurations for GitHub Actions, Docker Compose, or Kubernetes.
 
 Respond with JSON in this exact format (no markdown, just raw JSON):
@@ -57,14 +82,14 @@ Generate YAML configuration for: ${description}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("Could not parse JSON response");
     }
-    
+
     const parsed = JSON.parse(jsonMatch[0]);
-    
+
     return {
       yaml: parsed.yaml || "# Could not generate YAML",
       explanation: parsed.explanation || "No explanation available",
@@ -79,8 +104,8 @@ export async function optimizeDockerfile(dockerfile: string): Promise<{
   improvements: string[];
 }> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
+    const model = getGeminiModel("gemini-1.5-flash");
+
     const prompt = `You are a Docker expert. Analyze the provided Dockerfile and suggest optimizations for size, security, and build time.
 
 Respond with JSON in this exact format (no markdown, just raw JSON):
@@ -93,14 +118,14 @@ ${dockerfile}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("Could not parse JSON response");
     }
-    
+
     const parsed = JSON.parse(jsonMatch[0]);
-    
+
     return {
       optimizedDockerfile: parsed.optimizedDockerfile || dockerfile,
       improvements: parsed.improvements || [],
@@ -112,12 +137,12 @@ ${dockerfile}`;
 
 export async function generateDevOpsResponse(query: string): Promise<string> {
   try {
-    if (!process.env.GOOGLE_API_KEY) {
+    if (!isAIConfigured()) {
       return getDevOpsKnowledgeResponse(query);
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-    
+    const model = getGeminiModel("gemini-1.5-pro");
+
     const prompt = `You are an expert DevOps and Cloud Infrastructure consultant with deep knowledge of:
           
 - AWS, Azure, GCP cloud platforms and services
@@ -147,7 +172,7 @@ User Query: ${query}`;
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const answer = response.text();
-    
+
     if (!answer) {
       return getDevOpsKnowledgeResponse(query);
     }
@@ -155,7 +180,7 @@ User Query: ${query}`;
     return answer;
   } catch (error) {
     console.error('Gemini DevOps query error:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
         return `**Gemini API Quota Exceeded**
@@ -184,14 +209,14 @@ There's an issue with your Google API key. Please check:
 ${getDevOpsKnowledgeResponse(query)}`;
       }
     }
-    
+
     return getDevOpsKnowledgeResponse(query);
   }
 }
 
 function getDevOpsKnowledgeResponse(query: string): string {
   const lowerQuery = query.toLowerCase();
-  
+
   if (lowerQuery.includes('docker') || lowerQuery.includes('container')) {
     return `**Docker Best Practices**
 
@@ -227,7 +252,7 @@ CMD ["npm", "start"]
 
 *For more detailed assistance, please ensure your Google API key has sufficient quota.*`;
   }
-  
+
   if (lowerQuery.includes('kubernetes') || lowerQuery.includes('k8s')) {
     return `**Kubernetes Essentials**
 
@@ -277,7 +302,7 @@ spec:
 
 *For personalized Kubernetes solutions, please ensure your Google API has available quota.*`;
   }
-  
+
   if (lowerQuery.includes('aws') || lowerQuery.includes('cloud')) {
     return `**AWS Cloud Best Practices**
 
@@ -321,7 +346,7 @@ spec:
 
 *For detailed AWS architecture guidance, please ensure your Google API has available quota.*`;
   }
-  
+
   if (lowerQuery.includes('ci/cd') || lowerQuery.includes('pipeline') || lowerQuery.includes('github actions')) {
     return `**CI/CD Pipeline Best Practices**
 
@@ -399,8 +424,8 @@ I can help with DevOps and Cloud questions! Common topics include:
 
 export async function generateChatResponse(systemPrompt: string, userMessage: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
+    const model = getGeminiModel("gemini-1.5-flash");
+
     const prompt = `${systemPrompt}
 
 User Query: ${userMessage}

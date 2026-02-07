@@ -8,8 +8,7 @@ import { db } from "./db";
 import { users, impersonationLogs } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { generateCrudApi, generateDockerfile, generateDockerCompose, generateGitHubActions } from "./services/code-generator";
-import { analyzeLogError, generateYamlFromNaturalLanguage, optimizeDockerfile, generateDevOpsResponse } from "./services/gemini";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { analyzeLogError, generateYamlFromNaturalLanguage, optimizeDockerfile, generateDevOpsResponse, getGeminiModel } from "./services/gemini";
 import { createPaymentOrder, processSuccessfulPayment, checkUsageLimit, deductCreditForUsage, creditPackages } from "./services/payment";
 import { logger } from "./logger";
 import { redis } from "./redis";
@@ -19,17 +18,17 @@ import { searchJobs, getJobById, getJobStats } from "./services/jobs-service";
 import { interviewCategories } from "../shared/interview-questions";
 import { requireAdmin } from "./middleware/admin-guard";
 import { savePushSubscription, removePushSubscription, getVapidPublicKey, sendPushNotification } from "./services/push-notifications";
-import { 
-  metricsMiddleware, 
+import {
+  metricsMiddleware,
   register as metricsRegister,
   trackAIQuery,
   trackCreditsUsed,
   trackError,
   updateActiveUsers
 } from "./middleware/prometheus";
-import { 
-  globalRateLimit, 
-  authRateLimit, 
+import {
+  globalRateLimit,
+  authRateLimit,
   apiRateLimit,
   securityHeaders,
   validateInput,
@@ -37,10 +36,10 @@ import {
   corsMiddleware,
   sessionSecurity
 } from "./middleware/security";
-import { 
-  requireAuth, 
-  requireRole, 
-  requireOwnership, 
+import {
+  requireAuth,
+  requireRole,
+  requireOwnership,
   requireCredits,
   validateSessionTimeout
 } from "./middleware/auth-guard";
@@ -67,7 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     crossOriginEmbedderPolicy: false
   }));
-  
+
   app.use(corsMiddleware);
   app.use(securityHeaders);
   app.use(securityLogger);
@@ -75,10 +74,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(globalRateLimit);
   app.use(sessionSecurity);
   app.use(validateSessionTimeout(120)); // 2 hour session timeout
-  
+
   // Add Prometheus metrics middleware
   app.use(metricsMiddleware);
-  
+
   // Setup authentication routes with enhanced security
   setupAuth(app);
 
@@ -119,7 +118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/jobs", async (req, res) => {
     try {
       const { location, experienceLevel, type, postedWithin, search } = req.query;
-      
+
       const filters = {
         location: location as string | undefined,
         experienceLevel: experienceLevel as string | undefined,
@@ -127,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         postedWithin: postedWithin as string | undefined,
         search: search as string | undefined,
       };
-      
+
       const jobs = await searchJobs(filters);
       res.json({ jobs, total: jobs.length });
     } catch (error) {
@@ -181,13 +180,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('User-Agent'),
         referer: req.get('Referer')
       });
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: "Authentication required",
         message: "You must be logged in to access this resource",
         code: "AUTH_REQUIRED"
       });
     }
-    
+
     logger.info('Authenticated API request', {
       userId: req.user.id,
       username: req.user.username,
@@ -195,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       path: req.path,
       ip: req.ip
     });
-    
+
     next();
   };
 
@@ -209,69 +208,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
   ];
 
   // API Generation Routes with enhanced security
-  app.post("/api/generate/crud-api", 
-    apiRateLimit, 
-    enhancedRequireAuth, 
+  app.post("/api/generate/crud-api",
+    apiRateLimit,
+    enhancedRequireAuth,
     requireCredits(1),
     crudApiValidation,
     async (req: Request, res: Response) => {
-    try {
-      // Check validation results
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        logger.warn('Invalid input for CRUD API generation', {
-          userId: req.user!.id,
-          errors: errors.array(),
-          body: req.body
+      try {
+        // Check validation results
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          logger.warn('Invalid input for CRUD API generation', {
+            userId: req.user!.id,
+            errors: errors.array(),
+            body: req.body
+          });
+          return res.status(400).json({
+            error: 'Validation failed',
+            details: errors.array(),
+            code: 'VALIDATION_ERROR'
+          });
+        }
+
+        const { name, database, authentication, oauth, framework } = req.body;
+        const userId = req.user!.id;
+
+        // Check usage limit
+        if (!(await checkUsageLimit(userId, "api_generation"))) {
+          return res.status(402).json({
+            message: "Free limit reached. Please purchase credits to continue.",
+            feature: "api_generation"
+          });
+        }
+
+        const config = { name, database, authentication, oauth, framework };
+        logger.info('API generation started', { name, framework, database }, userId);
+
+        const generatedCode = generateCrudApi(config);
+
+        // Create project
+        const project = await storage.createProject({
+          userId,
+          name,
+          type: "api",
+          config,
+          generatedCode,
+          status: "active",
         });
-        return res.status(400).json({
-          error: 'Validation failed',
-          details: errors.array(),
-          code: 'VALIDATION_ERROR'
+
+        // Deduct credit or increment usage
+        await deductCreditForUsage(userId, "api_generation");
+
+        logger.apiGeneration(name, framework, true, userId);
+        logger.database('insert', 'projects', { projectId: project.id, name }, userId);
+
+        res.json({
+          project,
+          code: generatedCode,
+          message: "API generated successfully"
         });
+      } catch (error) {
+        res.status(500).json({ message: (error as Error).message });
       }
-
-      const { name, database, authentication, oauth, framework } = req.body;
-      const userId = req.user!.id;
-
-      // Check usage limit
-      if (!(await checkUsageLimit(userId, "api_generation"))) {
-        return res.status(402).json({ 
-          message: "Free limit reached. Please purchase credits to continue.",
-          feature: "api_generation"
-        });
-      }
-
-      const config = { name, database, authentication, oauth, framework };
-      logger.info('API generation started', { name, framework, database }, userId);
-      
-      const generatedCode = generateCrudApi(config);
-
-      // Create project
-      const project = await storage.createProject({
-        userId,
-        name,
-        type: "api",
-        config,
-        generatedCode,
-        status: "active",
-      });
-
-      // Deduct credit or increment usage
-      await deductCreditForUsage(userId, "api_generation");
-
-      logger.apiGeneration(name, framework, true, userId);
-      logger.database('insert', 'projects', { projectId: project.id, name }, userId);
-
-      res.json({ 
-        project,
-        code: generatedCode,
-        message: "API generated successfully"
-      });
-    } catch (error) {
-      res.status(500).json({ message: (error as Error).message });
-    }
-  });
+    });
 
   // Docker Generation Routes
   app.post("/api/generate/dockerfile", requireAuth, async (req, res) => {
@@ -280,7 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
 
       if (!(await checkUsageLimit(userId, "docker_generation"))) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: "Free limit reached. Please purchase credits to continue.",
           feature: "docker_generation"
         });
@@ -300,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await deductCreditForUsage(userId, "docker_generation");
 
-      res.json({ 
+      res.json({
         project,
         dockerfile,
         message: "Dockerfile generated successfully"
@@ -316,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
 
       if (!(await checkUsageLimit(userId, "docker_generation"))) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: "Free limit reached. Please purchase credits to continue.",
           feature: "docker_generation"
         });
@@ -335,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await deductCreditForUsage(userId, "docker_generation");
 
-      res.json({ 
+      res.json({
         project,
         dockerCompose,
         message: "Docker Compose generated successfully"
@@ -352,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
 
       if (!(await checkUsageLimit(userId, "cicd_generation"))) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: "Free limit reached. Please purchase credits to continue.",
           feature: "cicd_generation"
         });
@@ -372,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await deductCreditForUsage(userId, "cicd_generation");
 
-      res.json({ 
+      res.json({
         project,
         workflow,
         message: "GitHub Actions workflow generated successfully"
@@ -389,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
 
       if (!(await checkUsageLimit(userId, "ai_assistance"))) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: "Free limit reached. Please purchase credits to continue.",
           feature: "ai_assistance"
         });
@@ -410,7 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
 
       if (!(await checkUsageLimit(userId, "ai_assistance"))) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: "Free limit reached. Please purchase credits to continue.",
           feature: "ai_assistance"
         });
@@ -431,7 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
 
       if (!(await checkUsageLimit(userId, "ai_assistance"))) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: "Free limit reached. Please purchase credits to continue.",
           feature: "ai_assistance"
         });
@@ -463,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If not premium, check usage limit - costs 1 credit per query
       if (!isPremium) {
         if (!(await checkUsageLimit(userId, "ai_assistance"))) {
-          return res.status(402).json({ 
+          return res.status(402).json({
             message: "Free limit reached. Please purchase credits or subscribe to AI Pro for unlimited access.",
             feature: "ai_assistance",
             isPremiumFeature: true
@@ -473,15 +472,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate response using Gemini optimized for DevOps/Cloud queries
       const answer = await generateDevOpsResponse(query);
-      
+
       // Only deduct credits for non-premium users
       if (!isPremium) {
         await deductCreditForUsage(userId, "ai_assistance");
       }
 
       logger.info(`DevOps AI query processed for user ${userId} (premium: ${isPremium}): ${query.substring(0, 50)}...`);
-      
-      res.json({ 
+
+      res.json({
         answer,
         query,
         timestamp: new Date().toISOString(),
@@ -498,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const subscription = await storage.getActiveSubscription(userId);
-      
+
       res.json({
         hasActiveSubscription: !!subscription,
         subscription: subscription || null,
@@ -544,7 +543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       logger.info(`Subscription created for user ${userId}: ${planType}`);
-      
+
       res.json({
         success: true,
         subscription,
@@ -566,9 +565,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const cancelled = await storage.cancelSubscription(subscription.id);
-      
+
       logger.info(`Subscription cancelled for user ${userId}`);
-      
+
       res.json({
         success: true,
         subscription: cancelled,
@@ -585,9 +584,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const updatedUser = await storage.updateUserTourStatus(userId, true);
-      
+
       logger.info(`Tour completed for user ${userId}`);
-      
+
       res.json({
         success: true,
         hasSeenTour: updatedUser.hasSeenTour
@@ -603,16 +602,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const { domain } = req.body;
-      
+
       const validDomains = ['devops', 'data-engineering', 'cybersecurity'];
       if (!domain || !validDomains.includes(domain)) {
         return res.status(400).json({ message: "Invalid domain. Must be one of: devops, data-engineering, cybersecurity" });
       }
-      
+
       const updatedUser = await storage.updateUserDomain(userId, domain);
-      
+
       logger.info(`Domain updated to ${domain} for user ${userId}`);
-      
+
       res.json({
         success: true,
         primaryDomain: updatedUser.primaryDomain
@@ -678,13 +677,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const { title, description, category, priority } = req.body;
-      
+
       if (!title || !description || !category) {
         return res.status(400).json({ message: "Title, description, and category are required" });
       }
-      
-      const incident = await storage.createIncident(userId, { 
-        title, description, category, priority: priority || 'medium' 
+
+      const incident = await storage.createIncident(userId, {
+        title, description, category, priority: priority || 'medium'
       });
       res.json(incident);
     } catch (error) {
@@ -697,11 +696,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       const id = parseInt(req.params.id);
       const incident = await storage.getIncident(id);
-      
+
       if (!incident || incident.userId !== userId) {
         return res.status(404).json({ message: "Incident not found" });
       }
-      
+
       const messages = await storage.getIncidentMessages(id);
       res.json({ incident, messages });
     } catch (error) {
@@ -714,16 +713,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       const id = parseInt(req.params.id);
       const { message } = req.body;
-      
+
       if (!message) {
         return res.status(400).json({ message: "Message is required" });
       }
-      
+
       const incident = await storage.getIncident(id);
       if (!incident || incident.userId !== userId) {
         return res.status(404).json({ message: "Incident not found" });
       }
-      
+
       const msg = await storage.addIncidentMessage(id, userId, "user", message);
       res.json(msg);
     } catch (error) {
@@ -735,12 +734,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       const id = parseInt(req.params.id);
-      
+
       const incident = await storage.getIncident(id);
       if (!incident || incident.userId !== userId) {
         return res.status(404).json({ message: "Incident not found" });
       }
-      
+
       const updated = await storage.updateIncidentStatus(id, "reopened");
       res.json(updated);
     } catch (error) {
@@ -760,14 +759,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check usage limit
       if (!(await checkUsageLimit(userId, "migration_assistant"))) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: "Free limit reached. Please purchase credits to continue.",
           feature: "migration_assistant"
         });
       }
 
       let prompt = "";
-      
+
       if (type === "dockerize") {
         prompt = `You are an expert DevOps engineer. Convert the following application description or structure into a production-ready Dockerfile and docker-compose.yml. Include best practices like multi-stage builds, security hardening, and proper caching. 
 
@@ -793,9 +792,8 @@ Provide complete Kubernetes YAML manifests that can be applied directly.`;
         return res.status(400).json({ message: "Invalid migration type" });
       }
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -803,8 +801,8 @@ Provide complete Kubernetes YAML manifests that can be applied directly.`;
       await deductCreditForUsage(userId, "migration_assistant");
 
       logger.info(`Migration assistant used by user ${userId}: ${type}`);
-      
-      res.json({ 
+
+      res.json({
         result: text,
         type,
         timestamp: new Date().toISOString()
@@ -824,7 +822,7 @@ Provide complete Kubernetes YAML manifests that can be applied directly.`;
       if (!config || typeof config !== 'string' || config.trim().length < 10) {
         return res.status(400).json({ message: "Deployment configuration is required (minimum 10 characters)" });
       }
-      
+
       const validEnvironments = ['development', 'staging', 'production', 'qa', 'test'];
       const validProviders = ['aws', 'gcp', 'azure', 'digitalocean', 'kubernetes'];
       const safeEnvironment = validEnvironments.includes(environment) ? environment : 'production';
@@ -856,13 +854,12 @@ Provide a comprehensive deployment simulation analysis in the following JSON for
 
 Be thorough and realistic in your analysis.`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -873,7 +870,7 @@ Be thorough and realistic in your analysis.`;
 
       await deductCreditForUsage(userId, "deployment_simulator");
       logger.info(`Deployment simulation by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Deployment simulator error', error);
@@ -919,13 +916,12 @@ Return JSON:
   "stats": {"totalIssues": N, "critical": N, "high": N, "medium": N, "low": N}
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -936,7 +932,7 @@ Return JSON:
 
       await deductCreditForUsage(userId, "iac_autofix");
       logger.info(`IaC analysis by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('IaC autofix error', error);
@@ -957,7 +953,7 @@ Return JSON:
       const validFormats = ['markdown', 'html', 'plain', 'json'];
       const safeFormat = validFormats.includes(format) ? format : 'markdown';
       const safeProjectName = typeof projectName === 'string' ? projectName.slice(0, 100) : 'Project';
-      const safeVersion = typeof currentVersion === 'string' && /^\d+\.\d+\.\d+/.test(currentVersion) 
+      const safeVersion = typeof currentVersion === 'string' && /^\d+\.\d+\.\d+/.test(currentVersion)
         ? currentVersion : '1.0.0';
 
       if (!(await checkUsageLimit(userId, "release_notes"))) {
@@ -986,13 +982,12 @@ Return JSON:
   "improvements": ["list of improvements"]
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1003,7 +998,7 @@ Return JSON:
 
       await deductCreditForUsage(userId, "release_notes");
       logger.info(`Release notes generated by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Release notes error', error);
@@ -1018,9 +1013,9 @@ Return JSON:
       const userId = req.user!.id;
 
       const hasCode = code && typeof code === 'string' && code.trim().length >= 10;
-      const hasValidUrl = repoUrl && typeof repoUrl === 'string' && 
+      const hasValidUrl = repoUrl && typeof repoUrl === 'string' &&
         /^https?:\/\/[^\s]+$/.test(repoUrl);
-      
+
       if (!hasCode && !hasValidUrl) {
         return res.status(400).json({ message: "Valid code (minimum 10 characters) or repository URL is required" });
       }
@@ -1048,13 +1043,12 @@ Return JSON:
   "securityScore": 0-100
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1065,7 +1059,7 @@ Return JSON:
 
       await deductCreditForUsage(userId, "secret_scanner");
       logger.info(`Secret scan by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Secret scanner error', error);
@@ -1112,13 +1106,12 @@ Provide optimization recommendations in JSON:
   "summary": "brief summary"
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1129,7 +1122,7 @@ Provide optimization recommendations in JSON:
 
       await deductCreditForUsage(userId, "cloud_optimizer");
       logger.info(`Cloud optimization by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Cloud optimizer error', error);
@@ -1146,7 +1139,7 @@ Provide optimization recommendations in JSON:
       if (!query || typeof query !== 'string' || query.trim().length < 3) {
         return res.status(400).json({ message: "Query is required (minimum 3 characters)" });
       }
-      
+
       const safeQuery = query.slice(0, 2000);
 
       if (!(await checkUsageLimit(userId, "infra_chat"))) {
@@ -1174,13 +1167,12 @@ Return JSON:
 
 Be helpful, concise, and practical.`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1191,7 +1183,7 @@ Be helpful, concise, and practical.`;
 
       await deductCreditForUsage(userId, "infra_chat");
       logger.info(`Infra chat by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Infra chat error', error);
@@ -1212,7 +1204,7 @@ Be helpful, concise, and practical.`;
       const validProjectTypes = ['web-app', 'api', 'ecommerce', 'saas', 'mobile-backend', 'data-pipeline', 'ml-platform'];
       const validProviders = ['aws', 'gcp', 'azure', 'multi-cloud'];
       const validScales = ['small', 'medium', 'large', 'enterprise'];
-      
+
       const safeProjectType = validProjectTypes.includes(projectType) ? projectType : 'web-app';
       const safeCloudProvider = validProviders.includes(cloudProvider) ? cloudProvider : 'aws';
       const safeScale = validScales.includes(scale) ? scale : 'medium';
@@ -1258,19 +1250,18 @@ Generate a comprehensive architecture in JSON:
   "summary": "executive summary"
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { summary: text, projectName: "New Project" };
       } catch {
-        parsed = { 
+        parsed = {
           projectName: "Architecture Blueprint",
           summary: text,
           architecture: { overview: text, diagram: "", components: [] },
@@ -1283,7 +1274,7 @@ Generate a comprehensive architecture in JSON:
 
       await deductCreditForUsage(userId, "blueprint_generator");
       logger.info(`Blueprint generated by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Blueprint generator error', error);
@@ -1341,13 +1332,12 @@ Generate a detailed post-mortem in JSON:
   "fullReport": "complete markdown formatted report"
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1372,7 +1362,7 @@ Generate a detailed post-mortem in JSON:
 
       await deductCreditForUsage(userId, "postmortem_generator");
       logger.info(`Post-mortem generated by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Post-mortem generator error', error);
@@ -1426,13 +1416,12 @@ Return JSON:
   "summary": "brief description"
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1455,7 +1444,7 @@ Return JSON:
 
       await deductCreditForUsage(userId, "env_replicator");
       logger.info(`Environment replicated by user ${userId}: ${repoUrl}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Environment replicator error', error);
@@ -1469,8 +1458,8 @@ Return JSON:
       const { slowQueries, schemaDDL, engine } = req.body;
       const userId = req.user!.id;
 
-      if ((!slowQueries || typeof slowQueries !== 'string' || slowQueries.trim().length < 10) && 
-          (!schemaDDL || typeof schemaDDL !== 'string' || schemaDDL.trim().length < 10)) {
+      if ((!slowQueries || typeof slowQueries !== 'string' || slowQueries.trim().length < 10) &&
+        (!schemaDDL || typeof schemaDDL !== 'string' || schemaDDL.trim().length < 10)) {
         return res.status(400).json({ message: "Slow queries or schema DDL required (minimum 10 characters)" });
       }
 
@@ -1497,13 +1486,12 @@ Provide comprehensive database optimization analysis in JSON:
   "queryBottlenecks": [{"query": "problematic query", "bottleneck": "issue", "prediction": "will get worse", "mitigation": "fix"}]
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1522,7 +1510,7 @@ Provide comprehensive database optimization analysis in JSON:
 
       await deductCreditForUsage(userId, "db_optimizer");
       logger.info(`Database optimization by user ${userId}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Database optimizer error', error);
@@ -1572,7 +1560,7 @@ Provide comprehensive database optimization analysis in JSON:
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
+
         const ttfbStart = Date.now();
         const response = await fetch(url, {
           method: 'GET',
@@ -1584,17 +1572,17 @@ Provide comprehensive database optimization analysis in JSON:
           redirect: 'follow',
         });
         const ttfbEnd = Date.now();
-        
+
         clearTimeout(timeoutId);
-        
+
         const html = await response.text();
         const endTime = Date.now();
-        
+
         const responseHeaders: Record<string, string> = {};
         response.headers.forEach((value, key) => {
           responseHeaders[key.toLowerCase()] = value;
         });
-        
+
         realMetrics = {
           status: response.status,
           responseTime: `${endTime - startTime}ms`,
@@ -1627,7 +1615,7 @@ Provide comprehensive database optimization analysis in JSON:
       if (!descMatch) {
         descMatch = realMetrics.html.match(/<meta[^>]*content=["']([^"']*)[^>]*name=["']description["']/i);
       }
-      
+
       const seoData = {
         title: titleMatch ? titleMatch[1].trim() : '',
         description: descMatch ? descMatch[1].trim() : '',
@@ -1705,13 +1693,12 @@ Return JSON with this structure:
   "summary": "brief summary based on real findings"
 }`;
 
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || '');
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
+      const model = getGeminiModel("gemini-1.5-flash");
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       let parsed;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -1722,53 +1709,53 @@ Return JSON with this structure:
         if (!securityHeaders['strict-transport-security']) secScore -= 20;
         if (!securityHeaders['content-security-policy']) secScore -= 15;
         if (!realMetrics.https) secScore -= 25;
-        
+
         let seoScore = 100;
         if (!seoData.title) seoScore -= 30;
         if (!seoData.description) seoScore -= 25;
         if (!seoData.hasH1) seoScore -= 15;
         if (!seoData.hasViewport) seoScore -= 15;
-        
+
         const responseMs = parseInt(realMetrics.responseTime) || 1000;
         let perfScore = responseMs < 500 ? 95 : responseMs < 1000 ? 80 : responseMs < 2000 ? 60 : 40;
-        
+
         parsed = {
           url,
           timestamp: new Date().toISOString(),
           overallScore: Math.round((perfScore + secScore + seoScore) / 3),
           status: realMetrics.status >= 200 && realMetrics.status < 400 ? "healthy" : "critical",
-          performance: { 
-            loadTime: realMetrics.responseTime, 
-            ttfb: realMetrics.ttfb, 
-            fcp: "N/A", 
-            lcp: "N/A", 
-            score: perfScore, 
-            recommendations: [] 
+          performance: {
+            loadTime: realMetrics.responseTime,
+            ttfb: realMetrics.ttfb,
+            fcp: "N/A",
+            lcp: "N/A",
+            score: perfScore,
+            recommendations: []
           },
-          security: { 
-            score: Math.max(0, secScore), 
-            https: realMetrics.https, 
+          security: {
+            score: Math.max(0, secScore),
+            https: realMetrics.https,
             headers: Object.entries(securityHeaders).map(([name, value]) => ({
               name: name.toUpperCase().replace(/-/g, '_'),
               status: value ? 'pass' : 'fail',
               value: value || 'MISSING'
             })),
-            issues: [] 
+            issues: []
           },
-          seo: { 
-            score: Math.max(0, seoScore), 
-            title: seoData.title, 
-            description: seoData.description, 
-            issues: [], 
-            recommendations: [] 
+          seo: {
+            score: Math.max(0, seoScore),
+            title: seoData.title,
+            description: seoData.description,
+            issues: [],
+            recommendations: []
           },
           accessibility: { score: 70, issues: [] },
-          logs: { 
-            status: realMetrics.status, 
-            responseTime: realMetrics.responseTime, 
-            contentType: realMetrics.contentType, 
-            serverInfo: realMetrics.serverInfo, 
-            errors: realMetrics.errors 
+          logs: {
+            status: realMetrics.status,
+            responseTime: realMetrics.responseTime,
+            contentType: realMetrics.contentType,
+            serverInfo: realMetrics.serverInfo,
+            errors: realMetrics.errors
           },
           summary: text
         };
@@ -1786,7 +1773,7 @@ Return JSON with this structure:
 
       await deductCreditForUsage(userId, "website_monitor");
       logger.info(`Website analysis by user ${userId}: ${url} - Status: ${realMetrics.status}, Time: ${realMetrics.responseTime}`);
-      
+
       res.json({ result: parsed });
     } catch (error) {
       logger.error('Website analyzer error', error);
@@ -1811,7 +1798,7 @@ Return JSON with this structure:
     try {
       const { id } = req.params;
       const project = await storage.getProject(parseInt(id));
-      
+
       if (!project) {
         return res.status(404).json({ message: "Project not found" });
       }
@@ -1831,7 +1818,7 @@ Return JSON with this structure:
     try {
       const { id } = req.params;
       const updates = req.body;
-      
+
       const project = await storage.getProject(parseInt(id));
       if (!project || project.userId !== req.user!.id) {
         return res.status(404).json({ message: "Project not found" });
@@ -1868,7 +1855,7 @@ Return JSON with this structure:
       const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
       await processSuccessfulPayment(razorpay_payment_id, razorpay_order_id, razorpay_signature);
-      
+
       res.json({ message: "Payment verified successfully" });
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
@@ -1880,20 +1867,20 @@ Return JSON with this structure:
     try {
       const { sonarService } = await import('./services/sonar-service');
       const result = await sonarService.runAnalysis();
-      
+
       logger.info('SonarQube analysis initiated', {
         userId: req.user!.id,
         success: result.success,
         taskId: result.taskId
       });
-      
+
       res.json(result);
     } catch (error) {
-      logger.error('SonarQube analysis failed', { 
+      logger.error('SonarQube analysis failed', {
         error: error instanceof Error ? error.message : String(error),
         userId: req.user!.id
       });
-      
+
       trackError('sonar_analysis_failed', '/api/sonar/analyze', String(req.user?.id || 'unknown'));
       res.status(500).json({
         error: 'Analysis failed',
@@ -1906,26 +1893,26 @@ Return JSON with this structure:
     try {
       const { sonarService } = await import('./services/sonar-service');
       const metrics = await sonarService.getProjectMetrics();
-      
+
       if (!metrics) {
         return res.status(404).json({
           error: 'No metrics available',
           message: 'Please run an analysis first'
         });
       }
-      
+
       logger.info('SonarQube metrics retrieved', {
         userId: req.user!.id,
         overallRating: metrics.overallRating
       });
-      
+
       res.json(metrics);
     } catch (error) {
-      logger.error('Failed to get SonarQube metrics', { 
+      logger.error('Failed to get SonarQube metrics', {
         error: error instanceof Error ? error.message : String(error),
         userId: req.user!.id
       });
-      
+
       res.status(500).json({
         error: 'Failed to get metrics',
         message: 'Please try again later'
@@ -1937,26 +1924,26 @@ Return JSON with this structure:
     try {
       const { sonarService } = await import('./services/sonar-service');
       const results = await sonarService.getAnalysisResults();
-      
+
       if (!results) {
         return res.status(404).json({
           error: 'No analysis results available',
           message: 'Please run an analysis first'
         });
       }
-      
+
       logger.info('SonarQube issues retrieved', {
         userId: req.user!.id,
         issueCount: results.issues.length
       });
-      
+
       res.json(results.issues);
     } catch (error) {
-      logger.error('Failed to get SonarQube issues', { 
+      logger.error('Failed to get SonarQube issues', {
         error: error instanceof Error ? error.message : String(error),
         userId: req.user!.id
       });
-      
+
       res.status(500).json({
         error: 'Failed to get issues',
         message: 'Please try again later'
@@ -1969,7 +1956,7 @@ Return JSON with this structure:
     try {
       const userId = req.user!.id;
       const features = ["api_generation", "docker_generation", "cicd_generation", "ai_assistance"];
-      
+
       const usage = await Promise.all(
         features.map(async (feature) => ({
           feature,
@@ -1990,7 +1977,7 @@ Return JSON with this structure:
     try {
       const { type = 'app', lines = 100 } = req.query;
       const logsDir = join(process.cwd(), 'logs');
-      
+
       let filename = '';
       switch (type) {
         case 'error':
@@ -2002,19 +1989,19 @@ Return JSON with this structure:
         default:
           filename = 'app.log';
       }
-      
+
       const logPath = join(logsDir, filename);
-      
+
       if (!existsSync(logPath)) {
         return res.json({ logs: [], message: `No ${type} logs found` });
       }
-      
+
       const logContent = readFileSync(logPath, 'utf-8');
       const logLines = logContent.split('\n').filter(line => line.trim() !== '');
       const recentLogs = logLines.slice(-Number(lines));
-      
+
       logger.info('Logs viewed', { type, lines: recentLogs.length }, req.user!.id);
-      
+
       res.json({
         logs: recentLogs,
         total: logLines.length,
@@ -2040,7 +2027,7 @@ Return JSON with this structure:
       ['app.log', 'error.log', 'access.log'].forEach((filename, index) => {
         const logPath = join(logsDir, filename);
         const type = ['app', 'error', 'access'][index];
-        
+
         if (existsSync(logPath)) {
           const content = readFileSync(logPath, 'utf-8');
           const fileStats = statSync(logPath);
@@ -2060,7 +2047,7 @@ Return JSON with this structure:
   });
 
   // Admin monitoring routes (restricted to agrawalmayank200228@gmail.com)
-  
+
   // Prometheus metrics endpoint
   app.get('/metrics', requireAdmin, async (req, res) => {
     try {
@@ -2076,16 +2063,16 @@ Return JSON with this structure:
   app.get('/api/admin/logs', requireAdmin, async (req, res) => {
     try {
       const { level = 'all', limit = 100 } = req.query;
-      
+
       // Get real logs from log files
       const logsDir = join(process.cwd(), 'logs');
       const logPath = join(logsDir, 'app.log');
-      
+
       let logs: any[] = [];
       if (existsSync(logPath)) {
         const logContent = readFileSync(logPath, 'utf-8');
         const logLines = logContent.split('\n').filter(line => line.trim() !== '');
-        
+
         logs = logLines.slice(-Number(limit)).map((line, index) => {
           try {
             const logData = JSON.parse(line);
@@ -2113,8 +2100,8 @@ Return JSON with this structure:
         });
       }
 
-      const filteredLogs = level === 'all' 
-        ? logs 
+      const filteredLogs = level === 'all'
+        ? logs
         : logs.filter(log => log.level === level);
 
       res.json(filteredLogs);
@@ -2128,7 +2115,7 @@ Return JSON with this structure:
   app.get('/api/admin/metrics', requireAdmin, async (req, res) => {
     try {
       const userCount = await storage.getUserCount();
-      
+
       const metrics = [
         {
           name: 'Total Users',
@@ -2209,8 +2196,8 @@ Return JSON with this structure:
         disk: 45, // Mock value
         database: databaseStatus,
         redis: redisStatus,
-        status: databaseStatus === 'error' ? 'down' : 
-                redisStatus === 'error' ? 'degraded' : 'healthy',
+        status: databaseStatus === 'error' ? 'down' :
+          redisStatus === 'error' ? 'degraded' : 'healthy',
         uptime: Math.round(uptime),
         timestamp: new Date().toISOString()
       };
@@ -2227,7 +2214,7 @@ Return JSON with this structure:
     try {
       const logsDir = join(process.cwd(), 'logs');
       const logPath = join(logsDir, 'app.log');
-      
+
       let logs: string[] = [];
       if (existsSync(logPath)) {
         const logContent = readFileSync(logPath, 'utf-8');
@@ -2253,12 +2240,12 @@ Return JSON with this structure:
       const { generateJenkinsPipeline } = await import('./services/jenkins-generator');
       const config = req.body;
       const script = generateJenkinsPipeline(config);
-      
+
       await deductCreditForUsage(req.user!.id, "jenkins_generation");
       logger.info(`Jenkins pipeline generated for user ${req.user!.id}`, { projectName: config.projectName });
-      
-      res.json({ 
-        script, 
+
+      res.json({
+        script,
         filename: `Jenkinsfile-${config.projectName || 'pipeline'}`,
         type: 'jenkins-pipeline'
       });
@@ -2273,12 +2260,12 @@ Return JSON with this structure:
       const { generateAnsiblePlaybook } = await import('./services/ansible-generator');
       const config = req.body;
       const playbook = generateAnsiblePlaybook(config);
-      
+
       await deductCreditForUsage(req.user!.id, "ansible_generation");
       logger.info(`Ansible playbook generated for user ${req.user!.id}`, { playbookName: config.playbookName });
-      
-      res.json({ 
-        playbook, 
+
+      res.json({
+        playbook,
         filename: `${config.playbookName || 'playbook'}.yml`,
         type: 'ansible-playbook'
       });
@@ -2293,12 +2280,12 @@ Return JSON with this structure:
       const { generateSonarQubeSetup } = await import('./services/sonarqube-generator');
       const config = req.body;
       const script = generateSonarQubeSetup(config);
-      
+
       await deductCreditForUsage(req.user!.id, "sonarqube_setup");
       logger.info(`SonarQube setup generated for user ${req.user!.id}`, { setupType: config.setupType });
-      
-      res.json({ 
-        script, 
+
+      res.json({
+        script,
         filename: `sonarqube-setup-${config.setupType || 'docker'}.${config.setupType === 'kubernetes' ? 'yaml' : 'sh'}`,
         type: 'sonarqube-setup'
       });
@@ -2314,12 +2301,12 @@ Return JSON with this structure:
       const { generateSnowflakeSetup } = await import('./services/snowflake-generator');
       const config = req.body;
       const script = generateSnowflakeSetup(config);
-      
+
       await deductCreditForUsage(req.user!.id, "snowflake_setup");
       logger.info(`Snowflake setup generated for user ${req.user!.id}`, { databaseName: config.databaseName });
-      
-      res.json({ 
-        script, 
+
+      res.json({
+        script,
         filename: `snowflake-setup-${config.databaseName || 'config'}.sql`,
         type: 'snowflake-setup'
       });
@@ -2335,12 +2322,12 @@ Return JSON with this structure:
       const { generateAirflowDAG } = await import('./services/airflow-generator');
       const config = req.body;
       const script = generateAirflowDAG(config);
-      
+
       await deductCreditForUsage(req.user!.id, "airflow_generation");
       logger.info(`Airflow DAG generated for user ${req.user!.id}`, { dagId: config.dagId });
-      
-      res.json({ 
-        script, 
+
+      res.json({
+        script,
         filename: `${config.dagId || 'dag'}.py`,
         type: 'airflow-dag'
       });
@@ -2359,7 +2346,7 @@ Return JSON with this structure:
       const { email, reason } = req.body;
       const impersonatorId = req.user!.id;
       const impersonatorEmail = req.user!.email;
-      
+
       if (!email) {
         return res.status(400).json({ error: "Target user email is required" });
       }
@@ -2367,15 +2354,15 @@ Return JSON with this structure:
       const isPrimaryAdmin = impersonatorEmail === PRIMARY_ADMIN_EMAIL;
       const isAdmin = (req.user as any).isAdmin || isPrimaryAdmin;
       const canImpersonate = (req.user as any).canImpersonate;
-      
+
       if (!isAdmin) {
         return res.status(403).json({ error: "Admin access required" });
       }
-      
+
       if (!isPrimaryAdmin && !canImpersonate) {
         return res.status(403).json({ error: "You don't have impersonation privileges" });
       }
-      
+
       const targetUser = await storage.getUserByEmail(email);
       if (!targetUser) {
         return res.status(404).json({ error: "User not found" });
@@ -2384,7 +2371,7 @@ Return JSON with this structure:
       if (targetUser.id === impersonatorId) {
         return res.status(400).json({ error: "Cannot impersonate yourself" });
       }
-      
+
       await db.insert(impersonationLogs).values({
         impersonatorId,
         targetUserId: targetUser.id,
@@ -2393,11 +2380,11 @@ Return JSON with this structure:
         ipAddress: req.ip || null,
         userAgent: req.headers['user-agent'] || null
       });
-      
+
       (req.session as any).originalUserId = impersonatorId;
       (req.session as any).originalUserEmail = impersonatorEmail;
       (req.session as any).isImpersonating = true;
-      
+
       req.login(targetUser, (err) => {
         if (err) {
           logger.error('Failed to switch user', { error: err, impersonatorId, targetUserId: targetUser.id });
@@ -2419,10 +2406,10 @@ Return JSON with this structure:
       if (!session.isImpersonating || !session.originalUserId) {
         return res.status(400).json({ error: "Not currently impersonating" });
       }
-      
+
       const originalUserId = session.originalUserId;
       const targetUserId = req.user!.id;
-      
+
       await db.insert(impersonationLogs).values({
         impersonatorId: originalUserId,
         targetUserId,
@@ -2430,16 +2417,16 @@ Return JSON with this structure:
         ipAddress: req.ip || null,
         userAgent: req.headers['user-agent'] || null
       });
-      
+
       const originalUser = await storage.getUser(originalUserId);
       if (!originalUser) {
         return res.status(500).json({ error: "Original user not found" });
       }
-      
+
       delete session.originalUserId;
       delete session.originalUserEmail;
       delete session.isImpersonating;
-      
+
       req.login(originalUser, (err) => {
         if (err) {
           logger.error('Failed to restore session', { error: err, originalUserId });
@@ -2469,7 +2456,7 @@ Return JSON with this structure:
       const { userId } = req.body;
       const granterEmail = req.user!.email;
       const granterId = req.user!.id;
-      
+
       if (granterEmail !== PRIMARY_ADMIN_EMAIL) {
         return res.status(403).json({ error: "Only primary admin can grant impersonation privileges" });
       }
@@ -2481,7 +2468,7 @@ Return JSON with this structure:
       if (userId === granterId) {
         return res.status(400).json({ error: "Cannot grant impersonation to yourself" });
       }
-      
+
       const targetUser = await storage.getUser(userId);
       if (!targetUser) {
         return res.status(404).json({ error: "User not found" });
@@ -2490,7 +2477,7 @@ Return JSON with this structure:
       if (!targetUser.isAdmin && targetUser.email !== PRIMARY_ADMIN_EMAIL) {
         return res.status(400).json({ error: "Target user must be an admin" });
       }
-      
+
       await db.update(users).set({ canImpersonate: true }).where(eq(users.id, userId));
       logger.info(`Impersonation privilege granted to user ${userId} by ${granterEmail}`);
       res.json({ success: true });
@@ -2505,7 +2492,7 @@ Return JSON with this structure:
     try {
       const { userId } = req.body;
       const granterEmail = req.user!.email;
-      
+
       if (granterEmail !== PRIMARY_ADMIN_EMAIL) {
         return res.status(403).json({ error: "Only primary admin can revoke impersonation privileges" });
       }
@@ -2518,7 +2505,7 @@ Return JSON with this structure:
       if (!targetUser) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       await db.update(users).set({ canImpersonate: false }).where(eq(users.id, userId));
       logger.info(`Impersonation privilege revoked from user ${userId} by ${granterEmail}`);
       res.json({ success: true });
@@ -2533,7 +2520,7 @@ Return JSON with this structure:
     try {
       const { userId, reason } = req.body;
       const adminEmail = req.user!.email;
-      
+
       const isAdmin = req.user!.isAdmin || adminEmail === PRIMARY_ADMIN_EMAIL;
       if (!isAdmin) {
         return res.status(403).json({ error: "Admin access required" });
@@ -2570,7 +2557,7 @@ Return JSON with this structure:
     try {
       const { userId } = req.body;
       const adminEmail = req.user!.email;
-      
+
       const isAdmin = req.user!.isAdmin || adminEmail === PRIMARY_ADMIN_EMAIL;
       if (!isAdmin) {
         return res.status(403).json({ error: "Admin access required" });
@@ -2599,7 +2586,7 @@ Return JSON with this structure:
     try {
       const { email, credits } = req.body;
       const adminEmail = req.user!.email;
-      
+
       const isAdmin = req.user!.isAdmin || adminEmail === PRIMARY_ADMIN_EMAIL;
       if (!isAdmin) {
         return res.status(403).json({ error: "Admin access required" });
@@ -2629,7 +2616,7 @@ Return JSON with this structure:
       const { domain } = req.params;
       const { isEnabled, comingSoonMessage } = req.body;
       const adminEmail = req.user!.email;
-      
+
       const isAdmin = req.user!.isAdmin || adminEmail === PRIMARY_ADMIN_EMAIL;
       if (!isAdmin) {
         return res.status(403).json({ error: "Admin access required" });
@@ -2645,7 +2632,7 @@ Return JSON with this structure:
         comingSoonMessage || null,
         req.user!.id
       );
-      
+
       logger.info(`Domain ${domain} config updated by ${adminEmail}`, { isEnabled, comingSoonMessage });
       res.json(updatedConfig);
     } catch (error) {
@@ -2669,7 +2656,7 @@ Return JSON with this structure:
       }
 
       const gemini = await import('./services/gemini');
-      
+
       const systemPrompt = `You are Prometix AI Assistant, a helpful DevOps and cloud infrastructure expert. You help users with:
 - DevOps best practices and tooling
 - Docker, Kubernetes, CI/CD pipelines
@@ -2681,7 +2668,7 @@ Return JSON with this structure:
 Be concise, practical, and provide code examples when helpful. Focus on production-ready solutions.`;
 
       const response = await gemini.generateChatResponse(systemPrompt, message);
-      
+
       logger.info(`Chatbot query from user ${userId}`, { messageLength: message.length });
       res.json({ response });
     } catch (error) {
