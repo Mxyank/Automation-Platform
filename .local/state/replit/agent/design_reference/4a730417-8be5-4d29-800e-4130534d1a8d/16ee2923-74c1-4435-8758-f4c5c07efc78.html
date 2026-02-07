@@ -1,0 +1,733 @@
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOpsCloud - Backend-as-a-Service Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'neon-cyan': '#00D9FF',
+                        'neon-green': '#00FF94',
+                        'neon-purple': '#7C3AED',
+                        'dark-bg': '#0A0A0B',
+                        'dark-card': '#111111',
+                        'dark-border': '#1A1A1B'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'Menlo', 'monospace']
+                    },
+                    animation: {
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'float': 'float 3s ease-in-out infinite',
+                        'code-scroll': 'code-scroll 20s linear infinite'
+                    },
+                    keyframes: {
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px #00D9FF, 0 0 10px #00D9FF, 0 0 15px #00D9FF' },
+                            '100%': { boxShadow: '0 0 10px #00D9FF, 0 0 20px #00D9FF, 0 0 30px #00D9FF' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        'code-scroll': {
+                            '0%': { transform: 'translateY(0)' },
+                            '100%': { transform: 'translateY(-50%)' }
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-dark-bg text-white font-sans overflow-x-hidden">
+    <!-- @COMPONENT: NavigationBar [fixed header with auth buttons] -->
+    <nav class="fixed top-0 w-full bg-dark-bg/80 backdrop-blur-md border-b border-dark-border z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-neon-cyan to-neon-purple rounded-lg flex items-center justify-center">
+                        <i class="fas fa-cloud text-white text-lg"></i>
+                    </div>
+                    <span class="text-xl font-bold bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
+                        DevOpsCloud
+                    </span>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-300 hover:text-neon-cyan transition-colors duration-200">Features</a>
+                    <a href="#pricing" class="text-gray-300 hover:text-neon-cyan transition-colors duration-200">Pricing</a>
+                    <a href="#docs" class="text-gray-300 hover:text-neon-cyan transition-colors duration-200">Docs</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button data-event="click:handleLogin" class="text-gray-300 hover:text-white transition-colors duration-200">
+                        Sign In
+                    </button>
+                    <button data-event="click:handleSignup" class="bg-gradient-to-r from-neon-cyan to-neon-purple text-dark-bg px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity duration-200">
+                        Get Started
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- @END_COMPONENT: NavigationBar -->
+
+    <!-- @COMPONENT: HeroSection [main landing area with animated code] -->
+    <section class="pt-24 pb-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-dark-bg via-dark-card to-dark-bg"></div>
+        <div class="absolute inset-0 opacity-30">
+            <div class="absolute top-20 left-10 w-2 h-2 bg-neon-cyan rounded-full animate-pulse"></div>
+            <div class="absolute top-40 right-20 w-1 h-1 bg-neon-green rounded-full animate-pulse delay-1000"></div>
+            <div class="absolute bottom-20 left-1/4 w-1.5 h-1.5 bg-neon-purple rounded-full animate-pulse delay-500"></div>
+        </div>
+        
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8">
+                    <div class="space-y-4">
+                        <h1 class="text-5xl lg:text-6xl font-bold leading-tight">
+                            Build
+                            <span class="bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
+                                Backend APIs
+                            </span>
+                            in Minutes
+                        </h1>
+                        <p class="text-xl text-gray-300 leading-relaxed">
+                            The ultimate DevOps platform combining Backend-as-a-Service, Docker generation, 
+                            and AI-powered assistance. Ship faster with auto-generated APIs, CI/CD workflows, and intelligent debugging.
+                        </p>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button data-event="click:handleGetStarted" class="bg-gradient-to-r from-neon-cyan to-neon-purple text-dark-bg px-8 py-4 rounded-xl font-semibold text-lg hover:opacity-90 transition-opacity duration-200 flex items-center justify-center space-x-2">
+                            <span>Start Building</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button data-event="click:handleWatchDemo" class="border border-gray-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:border-neon-cyan hover:text-neon-cyan transition-all duration-200 flex items-center justify-center space-x-2">
+                            <i class="fas fa-play"></i>
+                            <span>Watch Demo</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center space-x-6 text-sm text-gray-400">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Free tier included</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>No credit card required</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Animated Code Preview -->
+                <div class="relative">
+                    <div class="bg-dark-card rounded-xl border border-gray-800 overflow-hidden shadow-2xl animate-float">
+                        <div class="bg-gray-900 px-4 py-3 flex items-center space-x-2 border-b border-gray-800">
+                            <div class="flex space-x-2">
+                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            </div>
+                            <span class="text-sm text-gray-400 ml-4">api-generator.js</span>
+                        </div>
+                        <div class="p-4 h-80 overflow-hidden relative">
+                            <div class="font-mono text-sm space-y-2 animate-code-scroll">
+                                <div class="text-gray-500">// Auto-generated CRUD API</div>
+                                <div><span class="text-purple-400">const</span> <span class="text-blue-400">express</span> = <span class="text-green-400">require</span>(<span class="text-orange-400">'express'</span>);</div>
+                                <div><span class="text-purple-400">const</span> <span class="text-blue-400">app</span> = <span class="text-blue-400">express</span>();</div>
+                                <div></div>
+                                <div class="text-gray-500">// GET /api/users</div>
+                                <div><span class="text-blue-400">app</span>.<span class="text-yellow-400">get</span>(<span class="text-orange-400">'/api/users'</span>, <span class="text-purple-400">async</span> (<span class="text-red-400">req</span>, <span class="text-red-400">res</span>) => {</div>
+                                <div class="ml-4"><span class="text-purple-400">const</span> <span class="text-blue-400">users</span> = <span class="text-purple-400">await</span> <span class="text-blue-400">db</span>.<span class="text-yellow-400">findMany</span>();</div>
+                                <div class="ml-4"><span class="text-blue-400">res</span>.<span class="text-yellow-400">json</span>(<span class="text-blue-400">users</span>);</div>
+                                <div>});</div>
+                                <div></div>
+                                <div class="text-gray-500">// POST /api/users</div>
+                                <div><span class="text-blue-400">app</span>.<span class="text-yellow-400">post</span>(<span class="text-orange-400">'/api/users'</span>, <span class="text-purple-400">async</span> (<span class="text-red-400">req</span>, <span class="text-red-400">res</span>) => {</div>
+                                <div class="ml-4"><span class="text-purple-400">const</span> <span class="text-blue-400">user</span> = <span class="text-purple-400">await</span> <span class="text-blue-400">db</span>.<span class="text-yellow-400">create</span>(<span class="text-red-400">req</span>.<span class="text-blue-400">body</span>);</div>
+                                <div class="ml-4"><span class="text-blue-400">res</span>.<span class="text-yellow-400">status</span>(<span class="text-green-400">201</span>).<span class="text-yellow-400">json</span>(<span class="text-blue-400">user</span>);</div>
+                                <div>});</div>
+                                <div></div>
+                                <div class="text-gray-500">// JWT Authentication</div>
+                                <div><span class="text-purple-400">const</span> <span class="text-blue-400">authMiddleware</span> = (<span class="text-red-400">req</span>, <span class="text-red-400">res</span>, <span class="text-red-400">next</span>) => {</div>
+                                <div class="ml-4"><span class="text-purple-400">const</span> <span class="text-blue-400">token</span> = <span class="text-red-400">req</span>.<span class="text-blue-400">headers</span>.<span class="text-blue-400">authorization</span>;</div>
+                                <div class="ml-4"><span class="text-purple-400">if</span> (!<span class="text-blue-400">token</span>) <span class="text-purple-400">return</span> <span class="text-blue-400">res</span>.<span class="text-yellow-400">status</span>(<span class="text-green-400">401</span>);</div>
+                                <div class="ml-4"><span class="text-blue-400">next</span>();</div>
+                                <div>};</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Glowing effect -->
+                    <div class="absolute -inset-1 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-20 animate-glow"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: HeroSection -->
+
+    <!-- @COMPONENT: FeaturesSection [main feature showcase] -->
+    <section id="features" class="py-20 bg-gradient-to-b from-dark-bg to-dark-card">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">
+                    Everything You Need to
+                    <span class="bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
+                        Ship Faster
+                    </span>
+                </h2>
+                <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                    Combine the power of Supabase, Docker automation, and AI assistance in one unified platform
+                </p>
+            </div>
+            
+            <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Backend-as-a-Service Feature -->
+                <div class="bg-dark-card border border-gray-800 rounded-xl p-6 hover:border-neon-cyan/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 bg-gradient-to-br from-neon-cyan to-blue-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-database text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">Backend-as-a-Service</h3>
+                    <p class="text-gray-300 mb-4">Auto-generate scalable CRUD APIs with JWT authentication, REST & GraphQL support, and Swagger documentation.</p>
+                    
+                    <!-- Code Preview -->
+                    <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm border border-gray-700">
+                        <div class="text-gray-500">// Generated in seconds</div>
+                        <div><span class="text-green-400">POST</span> <span class="text-orange-400">/api/auth/login</span></div>
+                        <div><span class="text-green-400">GET</span> <span class="text-orange-400">/api/users</span></div>
+                        <div><span class="text-green-400">POST</span> <span class="text-orange-400">/api/users</span></div>
+                        <div><span class="text-blue-400">JWT</span> <span class="text-gray-400">authentication included</span></div>
+                    </div>
+                </div>
+                
+                <!-- DevOps Toolkit Feature -->
+                <div class="bg-dark-card border border-gray-800 rounded-xl p-6 hover:border-neon-green/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 bg-gradient-to-br from-neon-green to-green-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fab fa-docker text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">DevOps Toolkit</h3>
+                    <p class="text-gray-300 mb-4">One-click Docker, docker-compose, and GitHub Actions generation. Terraform and Helm charts included.</p>
+                    
+                    <!-- Code Preview -->
+                    <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm border border-gray-700">
+                        <div class="text-gray-500"># Dockerfile generated</div>
+                        <div><span class="text-purple-400">FROM</span> <span class="text-orange-400">node:18-alpine</span></div>
+                        <div><span class="text-purple-400">WORKDIR</span> <span class="text-orange-400">/app</span></div>
+                        <div><span class="text-purple-400">COPY</span> <span class="text-orange-400">. .</span></div>
+                        <div><span class="text-purple-400">RUN</span> <span class="text-orange-400">npm install</span></div>
+                    </div>
+                </div>
+                
+                <!-- AI DevOps Assistant Feature -->
+                <div class="bg-dark-card border border-gray-800 rounded-xl p-6 hover:border-neon-purple/50 transition-all duration-300 group">
+                    <div class="w-12 h-12 bg-gradient-to-br from-neon-purple to-purple-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-brain text-white text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">AI DevOps Copilot</h3>
+                    <p class="text-gray-300 mb-4">Paste logs or errors for AI-powered analysis. Natural language to YAML conversion for CI/CD workflows.</p>
+                    
+                    <!-- Code Preview -->
+                    <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm border border-gray-700">
+                        <div class="text-gray-500"># Natural language input:</div>
+                        <div class="text-gray-300">"Create CI for Python with pytest"</div>
+                        <div class="text-gray-500"># AI generates:</div>
+                        <div><span class="text-yellow-400">name:</span> <span class="text-orange-400">Python CI</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: FeaturesSection -->
+
+    <!-- @COMPONENT: InteractiveDemoSection [live code examples] -->
+    <section class="py-20 bg-dark-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">See It In Action</h2>
+                <p class="text-xl text-gray-300">Try our generators before you sign up</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Demo Controls -->
+                <div class="space-y-6">
+                    <div class="space-y-4">
+                        <h3 class="text-2xl font-semibold">API Generator Demo</h3>
+                        <p class="text-gray-300">Configure your API settings and see the generated code instantly</p>
+                    </div>
+                    
+                    <!-- Demo Form -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Project Name</label>
+                            <input type="text" value="my-awesome-api" class="w-full bg-dark-card border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan outline-none transition-colors duration-200" data-mock="true">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Database Type</label>
+                            <select class="w-full bg-dark-card border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan outline-none transition-colors duration-200" data-mock="true">
+                                <option>PostgreSQL</option>
+                                <option>MongoDB</option>
+                                <option>MySQL</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Authentication</label>
+                            <div class="flex items-center space-x-4">
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" checked class="rounded border-gray-700 bg-dark-card text-neon-cyan focus:ring-neon-cyan" data-mock="true">
+                                    <span class="text-sm">JWT Auth</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" class="rounded border-gray-700 bg-dark-card text-neon-cyan focus:ring-neon-cyan" data-mock="true">
+                                    <span class="text-sm">OAuth</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button data-event="click:generateDemo" class="w-full bg-gradient-to-r from-neon-cyan to-neon-purple text-dark-bg py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity duration-200">
+                            Generate API Code
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Generated Code Output -->
+                <div class="bg-dark-card rounded-xl border border-gray-800 overflow-hidden">
+                    <div class="bg-gray-900 px-4 py-3 flex items-center justify-between border-b border-gray-800">
+                        <div class="flex items-center space-x-2">
+                            <div class="flex space-x-2">
+                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            </div>
+                            <span class="text-sm text-gray-400 ml-4">generated-api.js</span>
+                        </div>
+                        <button data-event="click:copyCode" class="text-gray-400 hover:text-neon-cyan transition-colors duration-200 text-sm flex items-center space-x-1">
+                            <i class="fas fa-copy"></i>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div class="p-4 h-80 overflow-y-auto">
+                        <pre class="font-mono text-sm space-y-1" data-mock="true">
+<span class="text-gray-500">// Auto-generated API for my-awesome-api</span>
+<span class="text-purple-400">const</span> <span class="text-blue-400">express</span> = <span class="text-green-400">require</span>(<span class="text-orange-400">'express'</span>);
+<span class="text-purple-400">const</span> <span class="text-blue-400">jwt</span> = <span class="text-green-400">require</span>(<span class="text-orange-400">'jsonwebtoken'</span>);
+<span class="text-purple-400">const</span> <span class="text-blue-400">bcrypt</span> = <span class="text-green-400">require</span>(<span class="text-orange-400">'bcryptjs'</span>);
+
+<span class="text-purple-400">const</span> <span class="text-blue-400">app</span> = <span class="text-blue-400">express</span>();
+<span class="text-blue-400">app</span>.<span class="text-yellow-400">use</span>(<span class="text-blue-400">express</span>.<span class="text-yellow-400">json</span>());
+
+<span class="text-gray-500">// Authentication middleware</span>
+<span class="text-purple-400">const</span> <span class="text-blue-400">authMiddleware</span> = (<span class="text-red-400">req</span>, <span class="text-red-400">res</span>, <span class="text-red-400">next</span>) => {
+  <span class="text-purple-400">const</span> <span class="text-blue-400">token</span> = <span class="text-red-400">req</span>.<span class="text-blue-400">header</span>(<span class="text-orange-400">'Authorization'</span>);
+  <span class="text-purple-400">if</span> (!<span class="text-blue-400">token</span>) {
+    <span class="text-purple-400">return</span> <span class="text-blue-400">res</span>.<span class="text-yellow-400">status</span>(<span class="text-green-400">401</span>).<span class="text-yellow-400">json</span>({ <span class="text-blue-400">error</span>: <span class="text-orange-400">'Access denied'</span> });
+  }
+  <span class="text-blue-400">next</span>();
+};
+
+<span class="text-gray-500">// User routes</span>
+<span class="text-blue-400">app</span>.<span class="text-yellow-400">post</span>(<span class="text-orange-400">'/api/auth/register'</span>, <span class="text-purple-400">async</span> (<span class="text-red-400">req</span>, <span class="text-red-400">res</span>) => {
+  <span class="text-gray-500">// Registration logic here</span>
+});
+
+<span class="text-blue-400">app</span>.<span class="text-yellow-400">get</span>(<span class="text-orange-400">'/api/users'</span>, <span class="text-blue-400">authMiddleware</span>, (<span class="text-red-400">req</span>, <span class="text-red-400">res</span>) => {
+  <span class="text-gray-500">// Get users logic</span>
+});
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: InteractiveDemoSection -->
+
+    <!-- @COMPONENT: PricingSection [pricing tiers with credits] -->
+    <section id="pricing" class="py-20 bg-gradient-to-b from-dark-card to-dark-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Simple, Credits-Based Pricing</h2>
+                <p class="text-xl text-gray-300">Start free, pay only for what you use</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Free Tier -->
+                <div class="bg-dark-card border border-gray-800 rounded-xl p-6 relative">
+                    <div class="text-center mb-6">
+                        <h3 class="text-xl font-semibold mb-2">Free Tier</h3>
+                        <div class="text-3xl font-bold mb-2">₹0</div>
+                        <p class="text-gray-400">Try before you buy</p>
+                    </div>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>1 free use per feature</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Basic API generation</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Docker file generation</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Community support</span>
+                        </li>
+                    </ul>
+                    <button data-event="click:selectFree" class="w-full border border-gray-600 text-white py-3 rounded-lg font-semibold hover:border-neon-cyan hover:text-neon-cyan transition-all duration-200">
+                        Get Started Free
+                    </button>
+                </div>
+                
+                <!-- Starter Pack -->
+                <div class="bg-dark-card border-2 border-neon-cyan rounded-xl p-6 relative transform scale-105">
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-neon-cyan to-neon-purple text-dark-bg px-4 py-1 rounded-full text-sm font-semibold">
+                        Most Popular
+                    </div>
+                    <div class="text-center mb-6">
+                        <h3 class="text-xl font-semibold mb-2">Starter Pack</h3>
+                        <div class="text-3xl font-bold mb-2">₹99</div>
+                        <p class="text-gray-400">5 credits included</p>
+                    </div>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>5 feature uses</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Advanced API templates</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>CI/CD workflow generation</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>AI DevOps assistance</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Priority support</span>
+                        </li>
+                    </ul>
+                    <button data-event="click:selectStarter" class="w-full bg-gradient-to-r from-neon-cyan to-neon-purple text-dark-bg py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity duration-200">
+                        Choose Starter
+                    </button>
+                </div>
+                
+                <!-- Pro Pack -->
+                <div class="bg-dark-card border border-gray-800 rounded-xl p-6 relative">
+                    <div class="text-center mb-6">
+                        <h3 class="text-xl font-semibold mb-2">Pro Pack</h3>
+                        <div class="text-3xl font-bold mb-2">₹149</div>
+                        <p class="text-gray-400">10 credits included</p>
+                    </div>
+                    <ul class="space-y-3 mb-6">
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>10 feature uses</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Everything in Starter</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Terraform generation</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Helm charts</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fas fa-check text-neon-green"></i>
+                            <span>Custom templates</span>
+                        </li>
+                    </ul>
+                    <button data-event="click:selectPro" class="w-full border border-gray-600 text-white py-3 rounded-lg font-semibold hover:border-neon-purple hover:text-neon-purple transition-all duration-200">
+                        Choose Pro
+                    </button>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12">
+                <p class="text-gray-400">
+                    All payments processed securely through Razorpay • Cancel anytime • Credits never expire
+                </p>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: PricingSection -->
+
+    <!-- @COMPONENT: DashboardPreview [mock dashboard interface] -->
+    <section class="py-20 bg-dark-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Your Command Center</h2>
+                <p class="text-xl text-gray-300">Manage all your projects from one unified dashboard</p>
+            </div>
+            
+            <!-- Dashboard Mockup -->
+            <div class="bg-dark-card rounded-xl border border-gray-800 overflow-hidden shadow-2xl">
+                <!-- Dashboard Header -->
+                <div class="bg-gray-900 px-6 py-4 border-b border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Project Dashboard</h3>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2 text-sm text-gray-400">
+                                <i class="fas fa-coins text-neon-cyan"></i>
+                                <span data-bind="user.credits">7 credits remaining</span>
+                            </div>
+                            <button data-event="click:buyCredits" class="bg-neon-cyan text-dark-bg px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity duration-200">
+                                Buy Credits
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dashboard Content -->
+                <div class="p-6">
+                    <div class="grid lg:grid-cols-3 gap-6">
+                        <!-- Recent Projects -->
+                        <div class="lg:col-span-2">
+                            <h4 class="text-lg font-semibold mb-4">Recent Projects</h4>
+                            <div class="space-y-3">
+                                <!-- @MAP: projects.map(project => ( -->
+                                <div class="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors duration-200" data-mock="true">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h5 class="font-medium" data-bind="project.name">E-commerce API</h5>
+                                            <p class="text-sm text-gray-400" data-bind="project.description">Node.js + PostgreSQL CRUD API</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-1 bg-neon-green/20 text-neon-green text-xs rounded-full" data-bind="project.status">Active</span>
+                                            <button data-event="click:viewProject" class="text-gray-400 hover:text-neon-cyan transition-colors duration-200">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                                
+                                <div class="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors duration-200" data-mock="true">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h5 class="font-medium">Blog CMS</h5>
+                                            <p class="text-sm text-gray-400">Express + MongoDB + JWT</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-1 bg-yellow-500/20 text-yellow-500 text-xs rounded-full">Deploying</span>
+                                            <button class="text-gray-400 hover:text-neon-cyan transition-colors duration-200">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-gray-900 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors duration-200" data-mock="true">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h5 class="font-medium">Analytics Dashboard</h5>
+                                            <p class="text-sm text-gray-400">Python + FastAPI + Redis</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 py-1 bg-blue-500/20 text-blue-500 text-xs rounded-full">Draft</span>
+                                            <button class="text-gray-400 hover:text-neon-cyan transition-colors duration-200">
+                                                <i class="fas fa-external-link-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4">Quick Actions</h4>
+                            <div class="space-y-3">
+                                <button data-event="click:generateAPI" class="w-full bg-gradient-to-r from-neon-cyan to-blue-500 text-white p-4 rounded-lg text-left hover:opacity-90 transition-opacity duration-200">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-database text-xl"></i>
+                                        <div>
+                                            <div class="font-medium">Generate API</div>
+                                            <div class="text-sm opacity-80">Create CRUD endpoints</div>
+                                        </div>
+                                    </div>
+                                </button>
+                                
+                                <button data-event="click:generateDocker" class="w-full bg-gradient-to-r from-neon-green to-green-500 text-white p-4 rounded-lg text-left hover:opacity-90 transition-opacity duration-200">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fab fa-docker text-xl"></i>
+                                        <div>
+                                            <div class="font-medium">Docker Setup</div>
+                                            <div class="text-sm opacity-80">Containerize your app</div>
+                                        </div>
+                                    </div>
+                                </button>
+                                
+                                <button data-event="click:aiAssistant" class="w-full bg-gradient-to-r from-neon-purple to-purple-500 text-white p-4 rounded-lg text-left hover:opacity-90 transition-opacity duration-200">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-brain text-xl"></i>
+                                        <div>
+                                            <div class="font-medium">AI Assistant</div>
+                                            <div class="text-sm opacity-80">Debug with AI</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- @END_COMPONENT: DashboardPreview -->
+
+    <!-- @COMPONENT: Footer [contact and links] -->
+    <footer class="bg-dark-card border-t border-gray-800 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-br from-neon-cyan to-neon-purple rounded-lg flex items-center justify-center">
+                            <i class="fas fa-cloud text-white text-lg"></i>
+                        </div>
+                        <span class="text-xl font-bold bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
+                            DevOpsCloud
+                        </span>
+                    </div>
+                    <p class="text-gray-300 mb-4 max-w-md">
+                        The ultimate DevOps platform for modern developers. Generate APIs, containerize applications, and debug with AI assistance.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-neon-cyan transition-colors duration-200">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-neon-cyan transition-colors duration-200">
+                            <i class="fab fa-github text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-neon-cyan transition-colors duration-200">
+                            <i class="fab fa-discord text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h5 class="font-semibold mb-4">Platform</h5>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-neon-cyan transition-colors duration-200">API Generator</a></li>
+                        <li><a href="#" class="hover:text-neon-cyan transition-colors duration-200">Docker Tools</a></li>
+                        <li><a href="#" class="hover:text-neon-cyan transition-colors duration-200">AI Assistant</a></li>
+                        <li><a href="#" class="hover:text-neon-cyan transition-colors duration-200">Templates</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h5 class="font-semibold mb-4">Support</h5>
+                    <ul class="space-y-2 text-gray-300">
+                        <li><a href="#" class="hover:text-neon-cyan transition-colors duration-200">Documentation</a></li>
+                        <li><a href="#" class="hover:text-neon-cyan transition-colors duration-200">Community</a></li>
+                        <li><a href="#" class="hover:text-neon-cyan transition-colors duration-200">Help Center</a></li>
+                        <li><a href="#" class="hover:text-neon-cyan transition-colors duration-200">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">
+                    © 2024 DevOpsCloud. All rights reserved.
+                </p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-neon-cyan transition-colors duration-200 text-sm">Privacy</a>
+                    <a href="#" class="text-gray-400 hover:text-neon-cyan transition-colors duration-200 text-sm">Terms</a>
+                    <a href="#" class="text-gray-400 hover:text-neon-cyan transition-colors duration-200 text-sm">Security</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- @END_COMPONENT: Footer -->
+
+    <script>
+        // TODO: Implement user authentication, project management, code generation APIs
+        (function() {
+            // Copy code functionality
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('[data-event*="copyCode"]')) {
+                    e.preventDefault();
+                    // TODO: Implement copy to clipboard functionality
+                    console.log('Copy code clicked');
+                }
+            });
+
+            // Navigation smooth scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Form interactions
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('[data-event*="generate"]')) {
+                    e.preventDefault();
+                    // TODO: Implement code generation logic
+                    console.log('Generate clicked');
+                }
+                
+                if (e.target.closest('[data-event*="select"]')) {
+                    e.preventDefault();
+                    // TODO: Implement pricing plan selection and Razorpay integration
+                    console.log('Plan selected');
+                }
+                
+                if (e.target.closest('[data-event*="Login"]') || e.target.closest('[data-event*="Signup"]')) {
+                    e.preventDefault();
+                    // TODO: Implement JWT-based authentication system
+                    console.log('Auth action clicked');
+                }
+            });
+
+            // Intersection Observer for animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe elements for scroll animations
+            document.querySelectorAll('.grid > div, .space-y-8 > div').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+        })();
+    </script>
+</body>
+</html>
