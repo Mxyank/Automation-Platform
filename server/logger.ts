@@ -1,11 +1,6 @@
+
 import { createWriteStream, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-
-// Create logs directory if it doesn't exist
-const logsDir = join(process.cwd(), 'logs');
-if (!existsSync(logsDir)) {
-  mkdirSync(logsDir, { recursive: true });
-}
 
 // Log levels
 export enum LogLevel {
@@ -29,44 +24,67 @@ interface LogEntry {
 }
 
 class Logger {
-  private appLogStream: NodeJS.WritableStream;
-  private errorLogStream: NodeJS.WritableStream;
-  private accessLogStream: NodeJS.WritableStream;
+  private appLogStream?: NodeJS.WritableStream;
+  private errorLogStream?: NodeJS.WritableStream;
+  private accessLogStream?: NodeJS.WritableStream;
+  private isServerless: boolean;
 
   constructor() {
-    // Create log streams
-    this.appLogStream = createWriteStream(join(logsDir, 'app.log'), { flags: 'a' });
-    this.errorLogStream = createWriteStream(join(logsDir, 'error.log'), { flags: 'a' });
-    this.accessLogStream = createWriteStream(join(logsDir, 'access.log'), { flags: 'a' });
+    // Detect Vercel environment
+    this.isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+
+    if (!this.isServerless) {
+      try {
+        // Create logs directory if it doesn't exist
+        const logsDir = join(process.cwd(), 'logs');
+        if (!existsSync(logsDir)) {
+          mkdirSync(logsDir, { recursive: true });
+        }
+
+        // Create log streams
+        this.appLogStream = createWriteStream(join(logsDir, 'app.log'), { flags: 'a' });
+        this.errorLogStream = createWriteStream(join(logsDir, 'error.log'), { flags: 'a' });
+        this.accessLogStream = createWriteStream(join(logsDir, 'access.log'), { flags: 'a' });
+      } catch (error) {
+        console.warn("Failed to initialize file logging (likely read-only fs), falling back to console only.");
+        this.isServerless = true;
+      }
+    }
   }
 
   private formatLog(entry: LogEntry): string {
     const { timestamp, level, message, data, userId, endpoint, method, statusCode, responseTime } = entry;
     let logString = `[${timestamp}] ${level}: ${message}`;
-    
+
     if (userId) logString += ` | User: ${userId}`;
     if (method && endpoint) logString += ` | ${method} ${endpoint}`;
     if (statusCode) logString += ` | Status: ${statusCode}`;
     if (responseTime) logString += ` | ${responseTime}ms`;
     if (data) logString += ` | Data: ${JSON.stringify(data)}`;
-    
+
     return logString + '\n';
   }
 
-  private writeLog(stream: NodeJS.WritableStream, entry: LogEntry) {
+  private writeLog(stream: NodeJS.WritableStream | undefined, entry: LogEntry) {
     const logString = this.formatLog(entry);
-    stream.write(logString);
-    
-    // Also log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      const colorCode = {
-        [LogLevel.ERROR]: '\x1b[31m',
-        [LogLevel.WARN]: '\x1b[33m',
-        [LogLevel.INFO]: '\x1b[36m',
-        [LogLevel.DEBUG]: '\x1b[90m'
-      };
-      console.log(`${colorCode[entry.level]}${logString.trim()}\x1b[0m`);
+
+    if (!this.isServerless && stream) {
+      stream.write(logString);
     }
+
+    // Always log to console in serverless or development
+    // In Vercel, console logs are captured by the platform
+    const colorCode = {
+      [LogLevel.ERROR]: '\x1b[31m',
+      [LogLevel.WARN]: '\x1b[33m',
+      [LogLevel.INFO]: '\x1b[36m',
+      [LogLevel.DEBUG]: '\x1b[90m'
+    };
+    // Use proper console methods for better visibility in Vercel logs
+    const consoleMethod = entry.level === LogLevel.ERROR ? console.error :
+      entry.level === LogLevel.WARN ? console.warn : console.log;
+
+    consoleMethod(`${colorCode[entry.level]}${logString.trim()}\x1b[0m`);
   }
 
   info(message: string, data?: any, userId?: number) {

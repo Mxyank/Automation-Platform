@@ -14,3 +14,4 @@ This application is ready for Vercel deployment.
 ### Important Notes
 - **Database**: Ensure your database (PostgreSQL/Redis) is accessible from the internet.
 - **WebSockets**: Real-time features using WebSockets will NOT work on Vercel Serverless.
+- **Logs**: The application logs to `stdout`/`stderr` in Vercel (viewable in Vercel Dashboard > Logs) instead of writing to files, as the filesystem is read-only.
