@@ -21,7 +21,7 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=5000
+ENV PORT=5002
 
 RUN apk add --no-cache libc6-compat
 
@@ -38,9 +38,9 @@ COPY --from=builder /app/shared ./shared
 RUN chown -R appuser:nodejs /app
 USER appuser
 
-EXPOSE 5000
+EXPOSE 5002
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:5002/api/health || exit 1
 
 CMD ["node", "dist/index.js"]
