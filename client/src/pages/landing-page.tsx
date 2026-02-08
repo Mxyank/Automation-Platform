@@ -250,7 +250,8 @@ export default function LandingPage() {
     queryKey: ["/api/site-settings"],
   });
 
-  const isProductHuntLive = siteSettings.find(s => s.key === 'producthunt_live')?.value || false;
+  const productHuntSetting = siteSettings.find(s => s.key === 'producthunt_live');
+  const isProductHuntLive = productHuntSetting ? productHuntSetting.value : true;
 
   // Enhanced parallax effects
   const y1 = useTransform(scrollY, [0, 500], [0, 150]);
@@ -274,29 +275,22 @@ export default function LandingPage() {
         <motion.div
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
-          className="fixed right-4 top-24 z-50"
+          className="fixed right-4 bottom-8 z-50"
           data-testid="producthunt-badge"
         >
           <a
-            href="https://www.producthunt.com/posts/prometix"
+            href="https://www.producthunt.com/products/prometix?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-prometix"
             target="_blank"
             rel="noopener noreferrer"
-            className="block"
+            className="block hover:scale-105 transition-transform"
           >
-            <div className="bg-white rounded-lg p-3 shadow-lg hover:scale-105 transition-transform">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                  <Rocket className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-900">LIVE ON</p>
-                  <p className="text-sm font-bold text-orange-600">Product Hunt</p>
-                </div>
-              </div>
-              <div className="bg-orange-50 rounded px-2 py-1 text-center">
-                <span className="text-xs text-orange-600 font-medium">Support us with an upvote!</span>
-              </div>
-            </div>
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1075871&theme=light&t=1770545577109"
+              alt="Prometix - Ship faster. Break nothing. | Product Hunt"
+              width="250"
+              height="54"
+              className="w-[200px] sm:w-[250px]"
+            />
           </a>
         </motion.div>
       )}
