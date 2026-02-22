@@ -14,11 +14,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Wrench, 
-  Download, 
-  Copy, 
-  CheckCircle, 
+import {
+  Wrench,
+  Download,
+  Copy,
+  CheckCircle,
   AlertTriangle,
   Play,
   GitBranch,
@@ -29,6 +29,9 @@ import {
   Users,
   FileText
 } from 'lucide-react';
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 
 interface JenkinsConfig {
   projectName: string;
@@ -53,7 +56,13 @@ interface JenkinsConfig {
 export default function JenkinsGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
   const queryClient = useQueryClient();
+  const { isEnabled } = useFeatures();
+
+  if (!isEnabled("cicd_generation")) {
+    return <FeatureDisabledOverlay featureName="CI/CD Pipeline" />;
+  }
   const [config, setConfig] = useState<JenkinsConfig>({
     projectName: '',
     projectType: 'nodejs',
@@ -90,6 +99,7 @@ export default function JenkinsGenerator() {
       });
     },
     onError: (error: any) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Generation Failed",
         description: error.message || "Failed to generate Jenkins pipeline",
@@ -149,7 +159,7 @@ export default function JenkinsGenerator() {
   const updateEnvironmentVariable = (index: number, field: 'key' | 'value', value: string) => {
     setConfig(prev => ({
       ...prev,
-      environmentVariables: prev.environmentVariables.map((env, i) => 
+      environmentVariables: prev.environmentVariables.map((env, i) =>
         i === index ? { ...env, [field]: value } : env
       )
     }));
@@ -164,6 +174,7 @@ export default function JenkinsGenerator() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-white p-6">
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -626,7 +637,7 @@ export default function JenkinsGenerator() {
                 <CardContent>
                   <ScrollArea className="h-64 w-full">
                     <pre className="bg-gray-900 p-4 rounded-lg text-xs text-gray-300 whitespace-pre-wrap">
-{`pipeline {
+                      {`pipeline {
     agent any
     
     tools {
@@ -680,7 +691,7 @@ export default function JenkinsGenerator() {
                 <CardContent>
                   <ScrollArea className="h-64 w-full">
                     <pre className="bg-gray-900 p-4 rounded-lg text-xs text-gray-300 whitespace-pre-wrap">
-{`pipeline {
+                      {`pipeline {
     agent any
     
     tools {

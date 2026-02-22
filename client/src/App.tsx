@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ThemeProvider } from "@/hooks/use-theme";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { BannedPopup } from "@/components/banned-popup";
 import { ImpersonationBanner } from "@/components/impersonation-banner";
@@ -14,7 +15,7 @@ import Dashboard from "@/pages/dashboard";
 import ApiGenerator from "@/pages/api-generator";
 import DockerGenerator from "@/pages/docker-generator";
 import JenkinsGenerator from "@/pages/jenkins-generator";
-import AnsibleGenerator from "@/pages/ansible-generator"; 
+import AnsibleGenerator from "@/pages/ansible-generator";
 import SonarQubeSetup from "@/pages/sonarqube-setup";
 import AiAssistant from "@/pages/ai-assistant";
 import Checkout from "@/pages/checkout";
@@ -47,6 +48,8 @@ import Jobs from "@/pages/jobs";
 import SnowflakeSetup from "@/pages/snowflake-setup";
 import AirflowGenerator from "@/pages/airflow-generator";
 import Helpdesk from "@/pages/helpdesk";
+import CloudSearch from "@/pages/cloud-search";
+import ProjectDetail from "@/pages/project-detail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -91,6 +94,8 @@ function Router() {
       <ProtectedRoute path="/snowflake-setup" component={SnowflakeSetup} />
       <ProtectedRoute path="/airflow-generator" component={AirflowGenerator} />
       <ProtectedRoute path="/helpdesk" component={Helpdesk} />
+      <ProtectedRoute path="/cloud-search" component={CloudSearch} />
+      <ProtectedRoute path="/projects/:id" component={ProjectDetail} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -98,16 +103,18 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <ImpersonationBanner />
-          <BannedPopup />
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ThemeProvider defaultTheme="dark" storageKey="prometix-ui-theme">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <ImpersonationBanner />
+            <BannedPopup />
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

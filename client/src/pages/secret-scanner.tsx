@@ -12,13 +12,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/hooks/use-auth';
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  Shield, 
-  Key, 
-  AlertTriangle, 
-  Lock, 
-  Unlock, 
+import { AdminGuard } from '@/lib/admin-guard';
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
+import {
+  Shield,
+  Key,
+  AlertTriangle,
+  Lock,
+  Unlock,
   Loader2,
   CheckCircle,
   XCircle,
@@ -61,6 +66,9 @@ interface ScanResult {
 
 export default function SecretScanner() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('secret_scanner');
   const [code, setCode] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
   const [autoRemediate, setAutoRemediate] = useState(true);
@@ -78,13 +86,14 @@ export default function SecretScanner() {
       const criticalCount = data.result.stats.critical;
       toast({
         title: "Scan Complete",
-        description: criticalCount > 0 
-          ? `Found ${criticalCount} critical security issues!` 
+        description: criticalCount > 0
+          ? `Found ${criticalCount} critical security issues!`
           : "No critical issues found.",
         variant: criticalCount > 0 ? "destructive" : "default",
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Scan Failed",
         description: error.message,
@@ -154,9 +163,11 @@ export default function SecretScanner() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Secret Scanner" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />
@@ -327,8 +338,8 @@ PRIVATE_KEY = "-----BEGIN RSA PRIVATE KEY-----"`}
                           </div>
                         </div>
                       </div>
-                      <Progress 
-                        value={result.securityScore} 
+                      <Progress
+                        value={result.securityScore}
                         className={`h-2 ${result.securityScore >= 80 ? '[&>div]:bg-green-500' : result.securityScore >= 60 ? '[&>div]:bg-yellow-500' : '[&>div]:bg-red-500'}`}
                       />
                       <div className="grid grid-cols-4 gap-4 mt-4 text-center">
@@ -414,7 +425,7 @@ PRIVATE_KEY = "-----BEGIN RSA PRIVATE KEY-----"`}
                                 </div>
                                 <p className="text-white font-medium">{finding.description}</p>
                                 <p className="text-gray-500 text-sm mt-1">{finding.location}</p>
-                                
+
                                 {finding.exposed && (
                                   <div className="mt-2 bg-red-500/10 border border-red-500/30 rounded p-2">
                                     <code className="text-red-400 text-xs font-mono break-all">
@@ -422,7 +433,7 @@ PRIVATE_KEY = "-----BEGIN RSA PRIVATE KEY-----"`}
                                     </code>
                                   </div>
                                 )}
-                                
+
                                 <div className="mt-2 bg-green-500/10 border border-green-500/30 rounded p-2">
                                   <p className="text-green-400 text-xs">{finding.remediation}</p>
                                 </div>

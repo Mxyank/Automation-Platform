@@ -12,12 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  FileCode, 
-  AlertTriangle, 
-  Shield, 
-  Tag, 
-  Trash2, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  FileCode,
+  AlertTriangle,
+  Shield,
+  Tag,
+  Trash2,
   Loader2,
   CheckCircle,
   XCircle,
@@ -28,6 +30,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface IaCIssue {
   type: "drift" | "syntax" | "security" | "missing_tags" | "unused";
@@ -53,6 +56,9 @@ interface AnalysisResult {
 
 export default function IaCAutofix() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('iac_autofix');
   const [iacCode, setIacCode] = useState("");
   const [iacType, setIacType] = useState("terraform");
   const [autoFix, setAutoFix] = useState(true);
@@ -72,6 +78,7 @@ export default function IaCAutofix() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Analysis Failed",
         description: error.message,
@@ -137,9 +144,11 @@ export default function IaCAutofix() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="IaC Autofix" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />

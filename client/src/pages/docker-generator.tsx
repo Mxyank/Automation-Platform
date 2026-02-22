@@ -14,6 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Container, ArrowLeft, Plus, X } from "lucide-react";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 
 interface DockerConfig {
   language: string;
@@ -32,9 +35,15 @@ interface ComposeService {
 export default function DockerGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  
+  const { isEnabled } = useFeatures();
+
+  if (!isEnabled("docker_generation")) {
+    return <FeatureDisabledOverlay featureName="Docker Setup" />;
+  }
+
   const [dockerConfig, setDockerConfig] = useState<DockerConfig>({
     language: "javascript",
     framework: "express",
@@ -66,27 +75,12 @@ export default function DockerGenerator() {
       });
     },
     onError: (error: any) => {
-      if (error.message.includes("402")) {
-        toast({
-          title: "Credits Required",
-          description: "You need to purchase credits to use this feature.",
-          variant: "destructive",
-          action: (
-            <Button 
-              onClick={() => setLocation("/checkout/starter")}
-              className="bg-neon-cyan text-dark-bg"
-            >
-              Buy Credits
-            </Button>
-          ),
-        });
-      } else {
-        toast({
-          title: "Generation Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      if (checkForUpgrade(error)) return;
+      toast({
+        title: "Generation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -105,27 +99,12 @@ export default function DockerGenerator() {
       });
     },
     onError: (error: any) => {
-      if (error.message.includes("402")) {
-        toast({
-          title: "Credits Required",
-          description: "You need to purchase credits to use this feature.",
-          variant: "destructive",
-          action: (
-            <Button 
-              onClick={() => setLocation("/checkout/starter")}
-              className="bg-neon-cyan text-dark-bg"
-            >
-              Buy Credits
-            </Button>
-          ),
-        });
-      } else {
-        toast({
-          title: "Generation Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      if (checkForUpgrade(error)) return;
+      toast({
+        title: "Generation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -149,7 +128,7 @@ export default function DockerGenerator() {
   };
 
   const updateService = (index: number, field: keyof ComposeService, value: any) => {
-    setComposeServices(prev => prev.map((service, i) => 
+    setComposeServices(prev => prev.map((service, i) =>
       i === index ? { ...service, [field]: value } : service
     ));
   };
@@ -160,8 +139,9 @@ export default function DockerGenerator() {
 
   return (
     <div className="min-h-screen bg-dark-bg">
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -174,7 +154,7 @@ export default function DockerGenerator() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
-            
+
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-br from-neon-green to-green-500 rounded-lg flex items-center justify-center">
                 <Container className="w-6 h-6 text-white" />
@@ -194,13 +174,13 @@ export default function DockerGenerator() {
 
           <Tabs defaultValue="dockerfile" className="space-y-6">
             <TabsList className="bg-dark-card border border-dark-border">
-              <TabsTrigger 
-                value="dockerfile" 
+              <TabsTrigger
+                value="dockerfile"
                 className="data-[state=active]:bg-neon-green data-[state=active]:text-dark-bg"
               >
                 Dockerfile
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="compose"
                 className="data-[state=active]:bg-neon-green data-[state=active]:text-dark-bg"
               >
@@ -281,7 +261,7 @@ export default function DockerGenerator() {
                             <Plus className="w-4 h-4" />
                           </Button>
                         </div>
-                        
+
                         {dockerConfig.envVars && dockerConfig.envVars.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-2">
                             {dockerConfig.envVars.map((envVar, index) => (
@@ -367,17 +347,17 @@ export default function DockerGenerator() {
                           <div className="flex items-center justify-between">
                             <h4 className="text-white font-medium">Service {index + 1}</h4>
                             {composeServices.length > 1 && (
-                              <Button 
+                              <Button
                                 onClick={() => removeService(index)}
-                                size="sm" 
-                                variant="ghost" 
+                                size="sm"
+                                variant="ghost"
                                 className="text-red-400 hover:text-red-300"
                               >
                                 <X className="w-4 h-4" />
                               </Button>
                             )}
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                               <Label className="text-gray-300">Service Name</Label>
@@ -387,7 +367,7 @@ export default function DockerGenerator() {
                                 className="bg-dark-bg border-gray-700 text-white focus:border-neon-cyan"
                               />
                             </div>
-                            
+
                             <div className="space-y-2">
                               <Label className="text-gray-300">Port</Label>
                               <Input
@@ -398,7 +378,7 @@ export default function DockerGenerator() {
                               />
                             </div>
                           </div>
-                          
+
                           <div className="space-y-2">
                             <Label className="text-gray-300">Environment File (Optional)</Label>
                             <Input

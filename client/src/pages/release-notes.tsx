@@ -28,6 +28,7 @@ import {
   BookOpen
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface ReleaseNotesResult {
   version: string;
@@ -43,6 +44,7 @@ interface ReleaseNotesResult {
 
 export default function ReleaseNotesGenerator() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
   const [commits, setCommits] = useState("");
   const [currentVersion, setCurrentVersion] = useState("1.0.0");
   const [projectName, setProjectName] = useState("");
@@ -62,6 +64,7 @@ export default function ReleaseNotesGenerator() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Generation Failed",
         description: error.message,
@@ -116,6 +119,7 @@ export default function ReleaseNotesGenerator() {
 
   return (
     <div className="min-h-screen bg-dark-bg">
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
       
       <div className="pt-16">

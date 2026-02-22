@@ -5,11 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import { apiRequest } from "@/lib/queryClient";
 import { AdminGuard } from '@/lib/admin-guard';
-import { 
-  Shield, 
-  Lock, 
-  Eye, 
+import { useToast } from "@/hooks/use-toast";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
+import {
+  Shield,
+  Lock,
+  Eye,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -22,16 +27,27 @@ import {
 } from 'lucide-react';
 
 export default function SecurityDashboard() {
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('security_dashboard');
+
   return (
     <AdminGuard>
-      <SecurityDashboardContent />
+      <div className="relative">
+        {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Security Dashboard" />}
+        <SecurityDashboardContent />
+      </div>
     </AdminGuard>
   );
 }
 
 function SecurityDashboardContent() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('secret_scanner');
   const [activeTab, setActiveTab] = useState('overview');
+  const [code, setCode] = useState("");
 
   // Security features overview
   const securityFeatures = [
@@ -145,8 +161,9 @@ function SecurityDashboardContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Secret Scanner" />}
+      <div className="max-w-7xl mx-auto space-y-6 p-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -284,7 +301,7 @@ function SecurityDashboardContent() {
                       Make 6+ login attempts within 15 minutes to trigger rate limiting
                     </p>
                     <code className="block text-xs bg-gray-800 p-2 rounded text-green-400">
-                      curl -X POST http://localhost:5000/api/login -d '{}'
+                      curl -X POST http://localhost:5000/api/login -d '{ }'
                     </code>
                   </div>
 
@@ -344,8 +361,8 @@ function SecurityDashboardContent() {
                     <p className="text-xs text-gray-400">
                       Only agrawalmayank200228@gmail.com can access /logs and /metrics
                     </p>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => window.open('/logs', '_blank')}
                       className="text-xs"

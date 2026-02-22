@@ -59,8 +59,9 @@ export async function createApp() {
     const userId = (req as any).user?.id;
     logger.error(`${req.method} ${req.path} - ${message}`, err, userId);
 
-    res.status(status).json({ message });
-    throw err;
+    if (!res.headersSent) {
+      res.status(status).json({ message });
+    }
   });
 
   return { app, server };

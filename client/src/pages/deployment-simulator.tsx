@@ -12,12 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  Rocket, 
-  AlertTriangle, 
-  DollarSign, 
-  Scale, 
-  Shield, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  Rocket,
+  AlertTriangle,
+  DollarSign,
+  Scale,
+  Shield,
   Loader2,
   CheckCircle,
   XCircle,
@@ -28,6 +30,7 @@ import {
   Zap
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface SimulationResult {
   failures: { risk: string; severity: string; recommendation: string }[];
@@ -41,6 +44,9 @@ interface SimulationResult {
 
 export default function DeploymentSimulator() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('deployment_simulator');
   const [deploymentConfig, setDeploymentConfig] = useState("");
   const [targetEnvironment, setTargetEnvironment] = useState("production");
   const [cloudProvider, setCloudProvider] = useState("aws");
@@ -60,6 +66,7 @@ export default function DeploymentSimulator() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Simulation Failed",
         description: error.message,
@@ -96,9 +103,11 @@ export default function DeploymentSimulator() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Deployment Simulator" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />

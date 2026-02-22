@@ -17,13 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { 
-  Users, 
-  Shield, 
-  Database, 
-  Activity, 
-  CreditCard, 
-  BarChart3, 
+import {
+  Users,
+  Shield,
+  Database,
+  Activity,
+  CreditCard,
+  BarChart3,
   AlertTriangle,
   UserPlus,
   UserMinus,
@@ -44,6 +44,9 @@ import {
   MessageSquare,
   Rabbit,
   HardDrive,
+  Target,
+  Monitor,
+  ArrowRight,
   Copy,
   Check,
   FileCode,
@@ -52,6 +55,10 @@ import {
   Coins,
   MessageCircle,
   Globe,
+  Bug,
+  CheckCircle,
+  XCircle,
+  Star,
   Tag,
   Sparkles
 } from "lucide-react";
@@ -278,6 +285,8 @@ export default function AdminDashboard() {
     id: number;
     key: string;
     value: boolean;
+    stringValue?: string | null;
+    numberValue?: number | null;
     label: string;
     description?: string;
     updatedAt: string;
@@ -292,6 +301,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/site-settings"],
     enabled: !!isAdmin,
   });
+
+  const getSetting = (key: string) => siteSettings.find(s => s.key === key);
 
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [incidentMessage, setIncidentMessage] = useState("");
@@ -487,11 +498,14 @@ export default function AdminDashboard() {
   });
 
   const updateSiteSettingMutation = useMutation({
-    mutationFn: async (data: { key: string; value: boolean }) => {
-      return apiRequest("PUT", `/api/admin/site-settings/${data.key}`, { value: data.value });
+    mutationFn: async ({ key, value, stringValue, numberValue }: { key: string, value?: boolean, stringValue?: string, numberValue?: number }) => {
+      return apiRequest("PATCH", `/api/site-settings/${key}`, { value, stringValue, numberValue });
     },
     onSuccess: () => {
-      toast({ title: "Setting Updated", description: "Site setting has been updated" });
+      toast({
+        title: "Setting Updated",
+        description: "Configuration has been saved successfully",
+      });
       refetchSiteSettings();
       queryClient.invalidateQueries({ queryKey: ["/api/site-settings"] });
     },
@@ -534,17 +548,17 @@ export default function AdminDashboard() {
     });
   };
 
-  const filteredUsers = users.filter(u => 
+  const filteredUsers = users.filter(u =>
     u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const categories = Array.from(new Set(apiDocs.map(doc => doc.category)));
-  
+
   const filteredApiDocs = apiDocs.filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(apiSearchQuery.toLowerCase()) ||
-                         doc.path.toLowerCase().includes(apiSearchQuery.toLowerCase()) ||
-                         doc.description.toLowerCase().includes(apiSearchQuery.toLowerCase());
+      doc.path.toLowerCase().includes(apiSearchQuery.toLowerCase()) ||
+      doc.description.toLowerCase().includes(apiSearchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || doc.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -591,7 +605,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-dark-bg">
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8 flex items-center justify-between">
@@ -602,9 +616,9 @@ export default function AdminDashboard() {
               </div>
               <p className="text-gray-400 mt-1">Platform management and monitoring</p>
             </div>
-            <Button 
+            <Button
               onClick={handleRefreshAll}
-              variant="outline" 
+              variant="outline"
               className="border-gray-700 text-gray-300 hover:text-white"
               data-testid="button-refresh-all"
             >
@@ -772,6 +786,10 @@ export default function AdminDashboard() {
                 <Tag className="w-4 h-4 mr-2" />
                 Promotions
               </TabsTrigger>
+              <TabsTrigger value="features" className="data-[state=active]:bg-neon-cyan/20" data-testid="tab-features">
+                <Zap className="w-4 h-4 mr-2" />
+                Features
+              </TabsTrigger>
             </TabsList>
 
             {/* Users Tab */}
@@ -924,7 +942,7 @@ export default function AdminDashboard() {
                         className="bg-dark-bg border-gray-700 text-white"
                         data-testid="input-admin-email"
                       />
-                      <Button 
+                      <Button
                         onClick={() => grantAdminMutation.mutate(newAdminEmail)}
                         disabled={!newAdminEmail || grantAdminMutation.isPending}
                         className="bg-neon-cyan text-dark-bg hover:bg-neon-cyan/80"
@@ -962,7 +980,7 @@ export default function AdminDashboard() {
                               {admin.adminGrantedBy || "System"}
                             </TableCell>
                             <TableCell className="text-gray-400">
-                              {admin.adminGrantedAt 
+                              {admin.adminGrantedAt
                                 ? format(new Date(admin.adminGrantedAt), "MMM d, yyyy")
                                 : "N/A"
                               }
@@ -1381,11 +1399,11 @@ export default function AdminDashboard() {
                           <div className="flex items-center gap-2 mt-2">
                             <Badge variant="outline" className={
                               endpoint.auth === "admin" ? "border-red-500/50 text-red-400" :
-                              endpoint.auth === "required" ? "border-yellow-500/50 text-yellow-400" :
-                              "border-green-500/50 text-green-400"
+                                endpoint.auth === "required" ? "border-yellow-500/50 text-yellow-400" :
+                                  "border-green-500/50 text-green-400"
                             }>
-                              {endpoint.auth === "admin" ? "Admin Only" : 
-                               endpoint.auth === "required" ? "Auth Required" : "Public"}
+                              {endpoint.auth === "admin" ? "Admin Only" :
+                                endpoint.auth === "required" ? "Auth Required" : "Public"}
                             </Badge>
                           </div>
                         </div>
@@ -1470,8 +1488,8 @@ export default function AdminDashboard() {
                               <div key={i} className="bg-dark-bg border border-gray-700 rounded p-2">
                                 <Badge className={
                                   response.status < 300 ? "bg-green-500/20 text-green-400" :
-                                  response.status < 400 ? "bg-yellow-500/20 text-yellow-400" :
-                                  "bg-red-500/20 text-red-400"
+                                    response.status < 400 ? "bg-yellow-500/20 text-yellow-400" :
+                                      "bg-red-500/20 text-red-400"
                                 }>
                                   {response.status}
                                 </Badge>
@@ -1560,10 +1578,10 @@ export default function AdminDashboard() {
                                   {col.data_type}
                                 </TableCell>
                                 <TableCell>
-                                  <Badge 
-                                    variant="outline" 
-                                    className={col.is_nullable === "YES" 
-                                      ? "text-yellow-400 border-yellow-500/50" 
+                                  <Badge
+                                    variant="outline"
+                                    className={col.is_nullable === "YES"
+                                      ? "text-yellow-400 border-yellow-500/50"
                                       : "text-green-400 border-green-500/50"
                                     }
                                   >
@@ -1610,7 +1628,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <p className="text-gray-400 text-sm mb-4">
-                        Includes application workflow, tech stack, database diagrams, UML diagrams, 
+                        Includes application workflow, tech stack, database diagrams, UML diagrams,
                         system design diagrams, entity relationship diagrams, and Windows setup instructions.
                       </p>
                       <a href="/api/admin/download-docs" download>
@@ -1632,7 +1650,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <p className="text-gray-400 text-sm mb-4">
-                        Complete Postman collection with all API endpoints, request examples, 
+                        Complete Postman collection with all API endpoints, request examples,
                         authentication setup, and environment variables ready for testing.
                       </p>
                       <a href="/api/admin/postman-collection" download>
@@ -1729,9 +1747,9 @@ export default function AdminDashboard() {
                           <p className="text-gray-400 text-sm mb-4">
                             View raw Prometheus metrics for system monitoring and alerting.
                           </p>
-                          <a 
-                            href="/api/admin/metrics" 
-                            target="_blank" 
+                          <a
+                            href="/api/admin/metrics"
+                            target="_blank"
                             rel="noopener noreferrer"
                           >
                             <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white" data-testid="button-prometheus">
@@ -1778,8 +1796,8 @@ export default function AdminDashboard() {
                               <div className="space-y-4 py-4">
                                 <div>
                                   <label className="text-sm text-gray-400">Prometheus Data Source URL</label>
-                                  <Input 
-                                    readOnly 
+                                  <Input
+                                    readOnly
                                     value={`${window.location.origin}/api/admin/metrics`}
                                     className="bg-dark-bg border-gray-700 text-white font-mono text-sm mt-1"
                                   />
@@ -1877,25 +1895,24 @@ export default function AdminDashboard() {
                             <div
                               key={incident.id}
                               onClick={() => setSelectedIncident(incident)}
-                              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                                selectedIncident?.id === incident.id
-                                  ? 'bg-neon-cyan/10 border-neon-cyan/50'
-                                  : 'bg-dark-bg border-gray-700 hover:border-gray-600'
-                              }`}
+                              className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedIncident?.id === incident.id
+                                ? 'bg-neon-cyan/10 border-neon-cyan/50'
+                                : 'bg-dark-bg border-gray-700 hover:border-gray-600'
+                                }`}
                               data-testid={`incident-${incident.id}`}
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <Badge className={
                                   incident.status === 'open' ? 'bg-red-500/20 text-red-400' :
-                                  incident.status === 'in_progress' ? 'bg-yellow-500/20 text-yellow-400' :
-                                  'bg-green-500/20 text-green-400'
+                                    incident.status === 'in_progress' ? 'bg-yellow-500/20 text-yellow-400' :
+                                      'bg-green-500/20 text-green-400'
                                 }>
                                   {incident.status}
                                 </Badge>
                                 <Badge variant="outline" className={
                                   incident.priority === 'high' ? 'border-red-500 text-red-400' :
-                                  incident.priority === 'medium' ? 'border-yellow-500 text-yellow-400' :
-                                  'border-gray-600 text-gray-400'
+                                    incident.priority === 'medium' ? 'border-yellow-500 text-yellow-400' :
+                                      'border-gray-600 text-gray-400'
                                 }>
                                   {incident.priority}
                                 </Badge>
@@ -1960,11 +1977,10 @@ export default function AdminDashboard() {
                               selectedIncident.messages.map((msg) => (
                                 <div
                                   key={msg.id}
-                                  className={`mb-3 p-3 rounded-lg ${
-                                    msg.senderRole === 'admin'
-                                      ? 'bg-neon-cyan/10 border border-neon-cyan/30 ml-8'
-                                      : 'bg-gray-800 border border-gray-700 mr-8'
-                                  }`}
+                                  className={`mb-3 p-3 rounded-lg ${msg.senderRole === 'admin'
+                                    ? 'bg-neon-cyan/10 border border-neon-cyan/30 ml-8'
+                                    : 'bg-gray-800 border border-gray-700 mr-8'
+                                    }`}
                                 >
                                   <p className="text-gray-300 text-sm">{msg.message}</p>
                                   <p className="text-gray-500 text-xs mt-1">
@@ -2027,14 +2043,13 @@ export default function AdminDashboard() {
                     {['devops', 'data-engineering', 'cybersecurity'].map((domain) => {
                       const config = domainConfigs.find(d => d.domain === domain);
                       const isEnabled = config?.isEnabled ?? true;
-                      const domainName = domain === 'data-engineering' ? 'Data Engineering' : 
-                                        domain === 'cybersecurity' ? 'Cybersecurity' : 'DevOps';
+                      const domainName = domain === 'data-engineering' ? 'Data Engineering' :
+                        domain === 'cybersecurity' ? 'Cybersecurity' : 'DevOps';
                       return (
                         <div key={domain} className="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-gray-700">
                           <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                              isEnabled ? 'bg-neon-cyan/20' : 'bg-gray-700'
-                            }`}>
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${isEnabled ? 'bg-neon-cyan/20' : 'bg-gray-700'
+                              }`}>
                               <Globe className={`w-6 h-6 ${isEnabled ? 'text-neon-cyan' : 'text-gray-500'}`} />
                             </div>
                             <div>
@@ -2221,6 +2236,201 @@ export default function AdminDashboard() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="promotions">
+              <div className="grid gap-6">
+                <Card className="bg-dark-card border-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <FileCode className="w-5 h-5 text-blue-400" />
+                      Custom Platform Ads
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Manage the content and visibility of custom advertisements across the platform.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {siteSettings.filter(s => s.key === 'ad_template_primary').map(setting => (
+                      <div key={setting.key} className="space-y-4 p-4 bg-dark-bg/50 rounded-xl border border-gray-800">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-white text-base">Ad Content (Markdown/HTML)</Label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Enable Ad</span>
+                            <Switch
+                              checked={getSetting('promo_banner_active')?.value || false}
+                              onCheckedChange={(checked) => updateSiteSettingMutation.mutate({ key: 'promo_banner_active', value: checked })}
+                              disabled={updateSiteSettingMutation.isPending}
+                            />
+                          </div>
+                        </div>
+                        <Textarea
+                          defaultValue={setting.stringValue || ""}
+                          className="min-h-[150px] bg-gray-900 border-gray-700 text-white font-mono text-sm focus:border-neon-purple transition-colors"
+                          onBlur={(e) => {
+                            if (e.target.value !== setting.stringValue) {
+                              updateSiteSettingMutation.mutate({ key: setting.key, stringValue: e.target.value });
+                            }
+                          }}
+                        />
+                        <p className="text-xs text-gray-500 leading-relaxed italic">{setting.description}</p>
+                      </div>
+                    ))}
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {siteSettings.filter(s => ['promo_banner_text', 'promo_banner_active'].includes(s.key)).map(setting => (
+                        <div key={setting.key} className="p-4 bg-dark-bg/50 rounded-xl border border-gray-800">
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-white font-medium">{setting.label}</Label>
+                            {setting.key === 'promo_banner_active' && (
+                              <Badge className={setting.value ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}>
+                                {setting.value ? "Visible" : "Hidden"}
+                              </Badge>
+                            )}
+                          </div>
+                          {setting.key === 'promo_banner_active' ? (
+                            <Switch
+                              checked={setting.value}
+                              onCheckedChange={(checked) => updateSiteSettingMutation.mutate({ key: setting.key, value: checked })}
+                              disabled={updateSiteSettingMutation.isPending}
+                            />
+                          ) : (
+                            <Input
+                              defaultValue={setting.stringValue || ""}
+                              className="bg-gray-900 border-gray-700 text-white"
+                              onBlur={(e) => {
+                                if (e.target.value !== setting.stringValue) {
+                                  updateSiteSettingMutation.mutate({ key: setting.key, stringValue: e.target.value });
+                                }
+                              }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-dark-card border-gray-800">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-yellow-400" />
+                      Platform Sales & Discounts
+                    </CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Enable platform-wide sale mode to automatically discount all credit packages.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {siteSettings.filter(s => s.key.startsWith('sale_')).map(setting => (
+                      <div key={setting.key} className="p-4 bg-dark-bg rounded-lg border border-gray-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <Label className="text-white font-medium">{setting.label}</Label>
+                          {setting.key === 'sale_active' && (
+                            <Switch
+                              checked={setting.value}
+                              onCheckedChange={(checked) => updateSiteSettingMutation.mutate({ key: setting.key, value: checked })}
+                              disabled={updateSiteSettingMutation.isPending}
+                            />
+                          )}
+                        </div>
+                        {setting.key === 'sale_percentage' && (
+                          <div className="flex items-center gap-3">
+                            <Input
+                              type="number"
+                              defaultValue={setting.numberValue || 20}
+                              className="w-24 bg-gray-900 border-gray-700 text-white"
+                              onBlur={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val) && val !== setting.numberValue) {
+                                  updateSiteSettingMutation.mutate({ key: setting.key, numberValue: val });
+                                }
+                              }}
+                            />
+                            <span className="text-gray-400">% Discount</span>
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-500 mt-2">{setting.description}</p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="features">
+              <div className="grid gap-6">
+                <Card className="bg-dark-card border-gray-800">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                    <div>
+                      <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
+                        <Shield className="w-6 h-6 text-neon-cyan" />
+                        Platform Feature Controls
+                      </CardTitle>
+                      <CardDescription className="text-gray-400 mt-1">
+                        Instantly enable or disable any module across the entire platform.
+                      </CardDescription>
+                    </div>
+                    <div className="relative w-72">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                      <Input
+                        placeholder="Search features..."
+                        className="pl-9 bg-gray-900 border-gray-700 text-white h-9"
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                      {siteSettings
+                        .filter(s => s.key.startsWith('feature_') && (searchQuery === "" || s.label.toLowerCase().includes(searchQuery.toLowerCase())))
+                        .map((setting) => (
+                          <div
+                            key={setting.key}
+                            className="flex items-center justify-between p-4 bg-dark-bg rounded-xl border border-gray-800 hover:border-gray-700 transition-all group"
+                          >
+                            <div className="flex-1 min-w-0 pr-4">
+                              <h4 className="text-white text-sm font-semibold truncate group-hover:text-neon-cyan transition-colors">
+                                {setting.label}
+                              </h4>
+                              <p className="text-[10px] text-gray-500 truncate mt-0.5" title={setting.description}>
+                                {setting.description}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                              <Badge
+                                variant="outline"
+                                className={`text-[9px] px-2 py-0 h-4 border-none ${setting.value
+                                  ? 'bg-green-500/10 text-green-400'
+                                  : 'bg-red-500/10 text-red-400'
+                                  }`}
+                              >
+                                {setting.value ? 'ON' : 'OFF'}
+                              </Badge>
+                              <Switch
+                                checked={setting.value}
+                                onCheckedChange={(checked) => {
+                                  updateSiteSettingMutation.mutate({
+                                    key: setting.key,
+                                    value: checked
+                                  });
+                                }}
+                                disabled={updateSiteSettingMutation.isPending}
+                                className="scale-90"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    {siteSettings.filter(s => s.key.startsWith('feature_') && (searchQuery === "" || s.label.toLowerCase().includes(searchQuery.toLowerCase()))).length === 0 && (
+                      <div className="py-12 text-center text-gray-500">
+                        <Zap className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p>No features matching your search</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

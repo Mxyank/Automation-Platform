@@ -3,6 +3,14 @@ import 'dotenv/config';
 // Load environment variables from .env file
 dotenv.config();
 
+// Prevent crashes from unhandled errors
+process.on("unhandledRejection", (reason) => {
+  console.error("[Unhandled Rejection]", reason instanceof Error ? reason.message : reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("[Uncaught Exception]", err.message);
+});
+
 import { setupVite, serveStatic } from "./vite";
 import { log } from "./utils";
 import { createApp } from "./app";

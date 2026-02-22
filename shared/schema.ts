@@ -25,7 +25,15 @@ export const users = pgTable("users", {
   banReason: text("ban_reason"), // Reason for ban
   canImpersonate: boolean("can_impersonate").default(false).notNull(), // Can switch to other user accounts
   lastActiveAt: timestamp("last_active_at"), // Last activity timestamp
+  resetToken: text("reset_token"), // For password reset links
+  resetTokenExpiresAt: timestamp("reset_token_expires_at"), // Reset link expiration
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const session = pgTable("session", {
+  sid: text("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire").notNull(),
 });
 
 // Domain configuration for enabling/disabling platform domains
@@ -43,6 +51,8 @@ export const siteSettings = pgTable("site_settings", {
   id: serial("id").primaryKey(),
   key: text("key").notNull().unique(),
   value: boolean("value").default(false).notNull(),
+  stringValue: text("string_value"),
+  numberValue: integer("number_value"),
   label: text("label").notNull(),
   description: text("description"),
   updatedBy: integer("updated_by").references(() => users.id, { onDelete: "set null" }),

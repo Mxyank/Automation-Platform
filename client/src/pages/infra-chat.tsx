@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  MessageSquare, 
-  Send, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  MessageSquare,
+  Send,
   Loader2,
   Terminal,
   Server,
@@ -29,6 +31,7 @@ import {
   User
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -54,6 +57,9 @@ const exampleQueries = [
 
 export default function InfraChat() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('infra_chat');
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -89,6 +95,7 @@ export default function InfraChat() {
       ]);
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Chat Error",
         description: error.message,
@@ -107,13 +114,13 @@ export default function InfraChat() {
 
   const handleSend = () => {
     if (!input.trim()) return;
-    
+
     const userMessage: ChatMessage = {
       role: "user",
       content: input,
       timestamp: new Date(),
     };
-    
+
     setMessages((prev) => [...prev, userMessage]);
     chatMutation.mutate(input);
     setInput("");
@@ -143,9 +150,11 @@ export default function InfraChat() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Infra Chat" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />
@@ -180,7 +189,7 @@ export default function InfraChat() {
                     </Badge>
                   </div>
                 </CardHeader>
-                
+
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
                     {messages.map((message, index) => (
@@ -191,24 +200,22 @@ export default function InfraChat() {
                         className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                       >
                         <div className={`flex items-start gap-3 max-w-[80%] ${message.role === "user" ? "flex-row-reverse" : ""}`}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                            message.role === "user" 
-                              ? "bg-neon-purple" 
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${message.role === "user"
+                              ? "bg-neon-purple"
                               : "bg-gradient-to-r from-cyan-500 to-blue-500"
-                          }`}>
+                            }`}>
                             {message.role === "user" ? (
                               <User className="w-4 h-4 text-white" />
                             ) : (
                               <Bot className="w-4 h-4 text-white" />
                             )}
                           </div>
-                          <div className={`rounded-2xl p-4 ${
-                            message.role === "user"
+                          <div className={`rounded-2xl p-4 ${message.role === "user"
                               ? "bg-neon-purple/20 border border-neon-purple/30"
                               : "bg-gray-800 border border-gray-700"
-                          }`}>
+                            }`}>
                             <p className="text-white text-sm whitespace-pre-wrap">{message.content}</p>
-                            
+
                             {message.action && (
                               <div className="mt-3 space-y-2">
                                 {message.action.command && (
@@ -239,7 +246,7 @@ export default function InfraChat() {
                                 )}
                               </div>
                             )}
-                            
+
                             <p className="text-gray-500 text-xs mt-2">
                               {message.timestamp.toLocaleTimeString()}
                             </p>
@@ -247,7 +254,7 @@ export default function InfraChat() {
                         </div>
                       </motion.div>
                     ))}
-                    
+
                     {chatMutation.isPending && (
                       <motion.div
                         initial={{ opacity: 0 }}
@@ -267,11 +274,11 @@ export default function InfraChat() {
                         </div>
                       </motion.div>
                     )}
-                    
+
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
-                
+
                 <div className="border-t border-gray-800 p-4">
                   <div className="flex gap-2">
                     <Input

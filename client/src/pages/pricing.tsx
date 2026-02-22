@@ -6,26 +6,63 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Check,
-  Star,
-  Crown,
-  Sparkles,
+  Database,
+  Container,
+  Brain,
+  Code,
+  GitBranch,
   Zap,
-  CreditCard,
+  Check,
+  Play,
   ArrowRight,
-  Shield,
-  Clock,
+  Cloud,
+  Star,
   Users,
+  Shield,
   Rocket,
+  Globe,
+  Layers,
+  Settings,
+  Download,
+  Copy,
+  Terminal,
+  Award,
+  Timer,
+  TrendingUp,
+  DollarSign,
+  ChevronRight,
+  Github,
+  Twitter,
+  Linkedin,
+  BookOpen,
+  Sparkles,
+  Cpu,
+  Server,
+  Lock,
+  BarChart3,
+  Activity,
+  MousePointer,
+  Webhook,
+  FileCode,
+  Box,
+  Puzzle,
+  Flame,
+  Crown,
+  CreditCard,
+  Clock,
   Tag,
   Gift,
-  Flame
+  CheckCircle,
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 
 interface SiteSetting {
   id: number;
   key: string;
   value: boolean;
+  stringValue?: string;
+  numberValue?: number;
   label: string;
   description?: string;
 }
@@ -174,57 +211,51 @@ const faqs = [
 ];
 
 export default function PricingPage() {
-  const { data: siteSettings = [] } = useQuery<SiteSetting[]>({
-    queryKey: ["/api/site-settings"],
+  const { data: settings } = useQuery<SiteSetting[]>({
+    queryKey: ['/api/site-settings'],
   });
 
-  // Get active sales
-  const activeSales = siteSettings.filter(s => s.key.startsWith('sale_') && s.value);
-  
-  // Map sale keys to display info
-  const saleInfo: Record<string, { name: string; icon: typeof Tag; color: string; bgColor: string }> = {
-    sale_blackfriday: { name: 'Black Friday Sale', icon: Tag, color: 'text-white', bgColor: 'bg-gradient-to-r from-gray-900 to-gray-800 border-yellow-500' },
-    sale_christmas: { name: 'Christmas Sale', icon: Gift, color: 'text-red-400', bgColor: 'bg-gradient-to-r from-red-900 to-green-900 border-red-500' },
-    sale_summer: { name: 'Summer Sale', icon: Flame, color: 'text-yellow-400', bgColor: 'bg-gradient-to-r from-orange-900 to-yellow-900 border-orange-500' },
-    sale_diwali: { name: 'Diwali Sale', icon: Sparkles, color: 'text-orange-400', bgColor: 'bg-gradient-to-r from-orange-900 to-pink-900 border-orange-500' },
+  const getSetting = (key: string) => settings?.find(s => s.key === key);
+  const isSaleActive = getSetting('sale_active')?.value || false;
+  const salePercentage = getSetting('sale_percentage')?.numberValue || 0;
+  const saleDescription = getSetting('sale_description')?.stringValue || 'Special Offer';
+
+  const calculateDiscountedPrice = (priceStr: string) => {
+    if (!isSaleActive || salePercentage === 0) return priceStr;
+    const price = parseInt(priceStr.replace('₹', ''));
+    if (isNaN(price)) return priceStr;
+    const discountedPrice = Math.round(price * (1 - salePercentage / 100));
+    return `₹${discountedPrice}`;
   };
 
   return (
     <div className="min-h-screen bg-dark-bg">
       <Navigation />
-      
+
       <div className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          {/* Active Sale Banners */}
-          {activeSales.length > 0 && (
+          {/* Active Sale Banner */}
+          {isSaleActive && salePercentage > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-8 space-y-3"
+              className="mb-8"
             >
-              {activeSales.map(sale => {
-                const info = saleInfo[sale.key];
-                if (!info) return null;
-                const SaleIcon = info.icon;
-                return (
-                  <div 
-                    key={sale.key}
-                    className={`p-4 rounded-xl border ${info.bgColor} flex items-center justify-center gap-3`}
-                    data-testid={`banner-${sale.key}`}
-                  >
-                    <SaleIcon className={`w-6 h-6 ${info.color} animate-pulse`} />
-                    <span className={`text-lg font-bold ${info.color}`}>
-                      {info.name} is LIVE! Limited time discounts available!
-                    </span>
-                    <SaleIcon className={`w-6 h-6 ${info.color} animate-pulse`} />
-                  </div>
-                );
-              })}
+              <div
+                className={`p-4 rounded-xl border bg-gradient-to-r from-purple-900 to-blue-900 border-purple-500 flex items-center justify-center gap-3`}
+                data-testid={`banner-sale`}
+              >
+                <Sparkles className={`w-6 h-6 text-purple-400 animate-pulse`} />
+                <span className={`text-lg font-bold text-white`}>
+                  {saleDescription} - Get {salePercentage}% OFF!
+                </span>
+                <Sparkles className={`w-6 h-6 text-purple-400 animate-pulse`} />
+              </div>
             </motion.div>
           )}
 
           {/* Header */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
@@ -249,6 +280,10 @@ export default function PricingPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {pricingPlans.map((plan, index) => {
                 const Icon = plan.icon;
+                const originalPrice = plan.price;
+                const discountedPrice = calculateDiscountedPrice(originalPrice);
+                const isDiscounted = originalPrice !== discountedPrice;
+
                 return (
                   <motion.div
                     key={plan.name}
@@ -270,7 +305,14 @@ export default function PricingPage() {
                         </div>
                         <CardTitle className="text-white text-xl">{plan.name}</CardTitle>
                         <div className="mt-4">
-                          <span className="text-4xl font-bold text-white">{plan.price}</span>
+                          {isDiscounted ? (
+                            <>
+                              <span className="text-xl text-gray-500 line-through mr-2">{originalPrice}</span>
+                              <span className="text-4xl font-bold text-white">{discountedPrice}</span>
+                            </>
+                          ) : (
+                            <span className="text-4xl font-bold text-white">{plan.price}</span>
+                          )}
                           <span className="text-gray-400 ml-1">{plan.period}</span>
                         </div>
                         <p className="text-gray-400 text-sm mt-2">{plan.description}</p>
@@ -288,7 +330,7 @@ export default function PricingPage() {
                           ))}
                         </ul>
                         <Link href={plan.href}>
-                          <Button 
+                          <Button
                             className={`w-full ${plan.popular ? 'bg-neon-cyan text-dark-bg hover:bg-neon-cyan/90' : 'bg-dark-border text-white hover:bg-gray-700'}`}
                             data-testid={`btn-${plan.name.toLowerCase()}-plan`}
                           >
@@ -357,7 +399,7 @@ export default function PricingPage() {
                           ))}
                         </ul>
                         <Link href={plan.href}>
-                          <Button 
+                          <Button
                             className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
                             data-testid={`btn-${plan.name.toLowerCase().replace(/\s+/g, '-')}`}
                           >
@@ -426,7 +468,7 @@ export default function PricingPage() {
           </div>
 
           {/* CTA */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center bg-gradient-to-r from-neon-cyan/20 to-neon-purple/20 rounded-2xl p-8 border border-neon-cyan/30"

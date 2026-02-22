@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import {
   ArrowLeft,
   ArrowRight,
   GitBranch,
@@ -28,6 +28,8 @@ import {
   FileCode
 } from "lucide-react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 
 interface PipelineStage {
   id: string;
@@ -53,7 +55,12 @@ const availableStages = [
 export default function PipelineBuilder() {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+  const { isEnabled } = useFeatures();
+
+  if (!isEnabled("cicd_generation")) {
+    return <FeatureDisabledOverlay featureName="CI/CD Pipeline" />;
+  }
+
   const [pipeline, setPipeline] = useState<PipelineStage[]>([
     { id: "1", type: "checkout", name: "Checkout Code", icon: GitBranch, color: "bg-blue-500", config: {} },
     { id: "2", type: "install", name: "Install Dependencies", icon: Package, color: "bg-purple-500", config: {} },
@@ -82,7 +89,7 @@ export default function PipelineBuilder() {
 
   const generatePipeline = () => {
     let yaml = "";
-    
+
     if (outputFormat === "github") {
       yaml = `name: CI/CD Pipeline
 
@@ -127,7 +134,7 @@ ${pipeline.map(stage => generateJenkinsStage(stage)).join('\n')}
 }
 `;
     }
-    
+
     setGeneratedYaml(yaml);
     toast({ title: "Pipeline Generated!", description: "Your CI/CD pipeline is ready." });
   };
@@ -400,7 +407,7 @@ ${pipeline.map(stage => generateJenkinsStage(stage)).join('\n')}
                   ))}
                 </Reorder.Group>
               )}
-              
+
               <Button
                 onClick={generatePipeline}
                 disabled={pipeline.length === 0}
@@ -460,8 +467,8 @@ ${pipeline.map(stage => generateJenkinsStage(stage)).join('\n')}
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="border-cyan-500/50 text-cyan-500 hover:bg-cyan-500/10"
                   disabled={!generatedYaml}
                   onClick={handleCopy}
@@ -469,7 +476,7 @@ ${pipeline.map(stage => generateJenkinsStage(stage)).join('\n')}
                   <Copy className="w-4 h-4 mr-2" />
                   Copy YAML
                 </Button>
-                <Button 
+                <Button
                   className="bg-gradient-to-r from-cyan-600 to-blue-600"
                   disabled={!generatedYaml}
                   onClick={() => {

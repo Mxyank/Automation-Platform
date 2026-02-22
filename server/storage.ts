@@ -12,31 +12,36 @@ export interface IStorage {
   updateUserTourStatus(userId: number, hasSeenTour: boolean): Promise<User>;
   updateUserDomain(userId: number, domain: string): Promise<User>;
   getUserCount(): Promise<number>;
-  
+  // Password Reset
+  setPasswordResetToken(userId: number, token: string | null, expiresAt: Date | null): Promise<void>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  updateUserPassword(userId: number, password: string): Promise<User>;
+
   // Projects
   createProject(project: InsertProject & { userId: number }): Promise<Project>;
   getProjectsByUserId(userId: number): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
   updateProject(id: number, updates: Partial<Project>): Promise<Project>;
-  
+
   // Usage tracking
   getUsage(userId: number, featureName: string): Promise<Usage | undefined>;
   incrementUsage(userId: number, featureName: string): Promise<Usage>;
-  
+
   // Payments
   createPayment(payment: Omit<Payment, 'id' | 'createdAt'>): Promise<Payment>;
   updatePaymentStatus(paymentId: string, status: string): Promise<void>;
-  
+
   // Subscriptions
   getActiveSubscription(userId: number): Promise<Subscription | undefined>;
   createSubscription(subscription: Omit<Subscription, 'id' | 'createdAt'>): Promise<Subscription>;
   cancelSubscription(subscriptionId: number): Promise<Subscription>;
   updateUserPremiumStatus(userId: number, isPremium: boolean, expiresAt: Date | null): Promise<User>;
-  
+
   // Site settings (public for display, admin-only for update)
   getSiteSettings(): Promise<SiteSetting[]>;
   getSiteSetting(key: string): Promise<SiteSetting | undefined>;
-  updateSiteSetting(key: string, value: boolean, updatedBy: number): Promise<SiteSetting>;
+  updateSiteSetting(key: string, value: boolean | string | number, updatedBy: number): Promise<SiteSetting>;
+  seedFeatureSettings(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -84,7 +89,7 @@ export class DatabaseStorage implements IStorage {
     const baseUsername = profile.emails[0].value.split('@')[0];
     let username = baseUsername;
     let counter = 1;
-    
+
     // Ensure username uniqueness
     while (await this.getUserByUsername(username)) {
       username = `${baseUsername}${counter}`;
@@ -167,12 +172,12 @@ export class DatabaseStorage implements IStorage {
       .from(projects)
       .where(eq(projects.userId, userId))
       .orderBy(desc(projects.createdAt));
-    
+
     if (userProjects.length > 0) {
       // Cache for 30 minutes
       await redis.cacheUserProjects(userId, userProjects, 1800);
     }
-    
+
     return userProjects;
   }
 
@@ -201,11 +206,11 @@ export class DatabaseStorage implements IStorage {
 
   async incrementUsage(userId: number, featureName: string): Promise<Usage> {
     const existingUsage = await this.getUsage(userId, featureName);
-    
+
     if (existingUsage) {
       const [updated] = await db
         .update(usage)
-        .set({ 
+        .set({
           usedCount: existingUsage.usedCount + 1,
           lastUsed: new Date()
         })
@@ -251,7 +256,7 @@ export class DatabaseStorage implements IStorage {
         eq(subscriptions.status, 'active')
       ))
       .orderBy(desc(subscriptions.endDate));
-    
+
     if (subscription && new Date(subscription.endDate) > new Date()) {
       return subscription;
     }
@@ -263,10 +268,10 @@ export class DatabaseStorage implements IStorage {
       .insert(subscriptions)
       .values(subscription)
       .returning();
-    
+
     // Update user premium status
     await this.updateUserPremiumStatus(subscription.userId, true, subscription.endDate);
-    
+
     return newSubscription;
   }
 
@@ -276,7 +281,7 @@ export class DatabaseStorage implements IStorage {
       .set({ status: 'cancelled', autoRenew: false })
       .where(eq(subscriptions.id, subscriptionId))
       .returning();
-    
+
     return subscription;
   }
 
@@ -286,7 +291,7 @@ export class DatabaseStorage implements IStorage {
       .set({ isPremium, premiumExpiresAt: expiresAt })
       .where(eq(users.id, userId))
       .returning();
-    
+
     await redis.clearUserCache(userId);
     return user;
   }
@@ -303,8 +308,8 @@ export class DatabaseStorage implements IStorage {
   async grantAdminAccess(userId: number, grantedByEmail: string): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ 
-        isAdmin: true, 
+      .set({
+        isAdmin: true,
         adminGrantedBy: grantedByEmail,
         adminGrantedAt: new Date()
       })
@@ -317,8 +322,8 @@ export class DatabaseStorage implements IStorage {
   async revokeAdminAccess(userId: number): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ 
-        isAdmin: false, 
+      .set({
+        isAdmin: false,
         adminGrantedBy: null,
         adminGrantedAt: null
       })
@@ -450,13 +455,73 @@ export class DatabaseStorage implements IStorage {
     return setting || undefined;
   }
 
-  async updateSiteSetting(key: string, value: boolean, updatedBy: number): Promise<SiteSetting> {
+  async updateSiteSetting(key: string, value: boolean | string | number, updatedBy: number): Promise<SiteSetting> {
+    const updates: any = { updatedBy, updatedAt: new Date() };
+
+    if (typeof value === "boolean") {
+      updates.value = value;
+    } else if (typeof value === "string") {
+      updates.stringValue = value;
+    } else if (typeof value === "number") {
+      updates.numberValue = value;
+    }
+
     const [updated] = await db
       .update(siteSettings)
-      .set({ value, updatedBy, updatedAt: new Date() })
+      .set(updates)
       .where(eq(siteSettings.key, key))
       .returning();
     return updated;
+  }
+
+  async seedFeatureSettings(): Promise<void> {
+    const defaultSettings = [
+      // Core Features
+      { key: "feature_docker_generation", label: "Docker Setup", description: "Enable/Disable Dockerfile and Docker Compose generation", value: true },
+      { key: "feature_api_generation", label: "API Generator", description: "Enable/Disable CRUD API generation tools", value: true },
+      { key: "feature_cicd_generation", label: "CI/CD Pipeline", description: "Enable/Disable GitHub Actions and CI/CD tools", value: true },
+      { key: "feature_ai_assistance", label: "AI DevOps Assistant", description: "Enable/Disable AI-powered DevOps chat and analysis", value: true },
+      { key: "feature_ansible_generation", label: "Ansible Setup", description: "Enable/Disable Ansible playbook generation", value: true },
+
+      // Additional Domains
+      { key: "feature_airflow_generation", label: "Airflow Generator", description: "Enable/Disable Apache Airflow DAG generation", value: true },
+      { key: "feature_blueprint_generator", label: "Blueprint Generator", description: "Enable/Disable Architecture Blueprint generation", value: true },
+      { key: "feature_cloud_optimizer", label: "Cloud Optimizer", description: "Enable/Disable Cloud resource optimization tools", value: true },
+      { key: "feature_cloud_search", label: "Cloud Search", description: "Enable/Disable Cloud infrastructure search", value: true },
+      { key: "feature_cost_estimator", label: "Cost Estimator", description: "Enable/Disable Infrastructure cost estimation", value: true },
+      { key: "feature_database_optimizer", label: "DB Optimizer", description: "Enable/Disable Database query optimization", value: true },
+      { key: "feature_deployment_simulator", label: "Deployment Simulator", description: "Enable/Disable visual deployment simulations", value: true },
+      { key: "feature_env_replicator", label: "Env Replicator", description: "Enable/Disable environment replication tools", value: true },
+      { key: "feature_helpdesk", label: "Help Desk", description: "Enable/Disable incident management and support tickets", value: true },
+      { key: "feature_iac_autofix", label: "IaC Autofix", description: "Enable/Disable automatic IaC security fixes", value: true },
+      { key: "feature_infra_chat", label: "Infra Chat", description: "Enable/Disable platform-wide infrastructure chat", value: true },
+      { key: "feature_logs_dashboard", label: "Logs Dashboard", description: "Enable/Disable centralized logging view", value: true },
+      { key: "feature_migration_assistant", label: "Migration Assistant", description: "Enable/Disable cloud migration tools", value: true },
+      { key: "feature_postmortem", label: "Postmortem Generator", description: "Enable/Disable AI-powered incident postmortems", value: true },
+      { key: "feature_secret_scanner", label: "Secret Scanner", description: "Enable/Disable security secret scanning", value: true },
+      { key: "feature_security_dashboard", label: "Security Dashboard", description: "Enable/Disable centralized security overview", value: true },
+      { key: "feature_snowflake_setup", label: "Snowflake Setup", description: "Enable/Disable Snowflake data warehouse tools", value: true },
+      { key: "feature_sonar_dashboard", label: "Sonar Dashboard", description: "Enable/Disable SonarQube metrics integration", value: true },
+      { key: "feature_sonarqube_setup", label: "Sonarqube Setup", description: "Enable/Disable SonarQube infrastructure setup", value: true },
+      { key: "feature_website_monitor", label: "Website Monitor", description: "Enable/Disable website uptime monitoring", value: true },
+
+      // Promotions & Sales
+      { key: "promo_banner_active", label: "Global Promo Banner", description: "Enable/Disable the banner at the top of the landing page", value: false },
+      { key: "promo_banner_text", label: "Promo Banner Text", description: "The message shown in the global promotional banner", value: false, stringValue: "🚀 New Feature: Visual Pipeline Builder is now live! Try it today." },
+      { key: "sale_active", label: "Platform Sale Mode", description: "When enabled, applies discounts to all pricing and shows sale banners", value: false },
+      { key: "sale_percentage", label: "Sale Discount Percentage", description: "Percentage to discount from all products (0-100)", value: false, numberValue: 20 },
+      { key: "ad_template_primary", label: "Primary Ad Template", description: "Markdown/HTML template for promotional cards", value: false, stringValue: "### Summer Sale is LIVE!\nGet **20% OFF** on all credit packages for a limited time." },
+    ];
+
+    for (const setting of defaultSettings) {
+      const existing = await this.getSiteSetting(setting.key);
+      if (!existing) {
+        await db.insert(siteSettings).values({
+          ...setting,
+          updatedAt: new Date(),
+        });
+      }
+    }
   }
 
   // User ban methods
@@ -489,6 +554,39 @@ export class DatabaseStorage implements IStorage {
   async updateLastActive(userId: number): Promise<void> {
     await db.update(users).set({ lastActiveAt: new Date() }).where(eq(users.id, userId));
     await redis.clearUserCache(userId);
+  }
+
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiresAt: null
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    await redis.clearUserCache(userId);
+    return user;
+  }
+
+  async setPasswordResetToken(userId: number, token: string | null, expiresAt: Date | null): Promise<void> {
+    await db
+      .update(users)
+      .set({ resetToken: token, resetTokenExpiresAt: expiresAt })
+      .where(eq(users.id, userId));
+    await redis.clearUserCache(userId);
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.resetToken, token),
+        gte(users.resetTokenExpiresAt, new Date())
+      ));
+    return user || undefined;
   }
 
   // Enhanced stats
@@ -550,7 +648,7 @@ export class DatabaseStorage implements IStorage {
     if (resolution) updates.resolution = resolution;
     if (assigneeId) updates.assigneeId = assigneeId;
     if (status === 'closed' || status === 'resolved') updates.closedAt = new Date();
-    
+
     const [incident] = await db
       .update(incidents)
       .set(updates)

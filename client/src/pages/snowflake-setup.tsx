@@ -11,12 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 import { useToast } from '@/hooks/use-toast';
 import { Navigation } from '@/components/navigation';
-import { 
-  Snowflake, 
-  Download, 
-  Copy, 
+import {
+  Snowflake,
+  Download,
+  Copy,
   Database,
   Shield,
   Users,
@@ -26,6 +28,7 @@ import {
   Key,
   Zap
 } from 'lucide-react';
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface SnowflakeConfig {
   accountName: string;
@@ -50,6 +53,9 @@ interface SnowflakeConfig {
 export default function SnowflakeSetup() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('snowflake_setup');
   const queryClient = useQueryClient();
   const [config, setConfig] = useState<SnowflakeConfig>({
     accountName: '',
@@ -89,6 +95,7 @@ export default function SnowflakeSetup() {
       });
     },
     onError: (error: any) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Generation Failed",
         description: error.message || "Failed to generate Snowflake setup",
@@ -163,7 +170,9 @@ export default function SnowflakeSetup() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="relative min-h-screen bg-dark-bg text-white">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Snowflake Setup" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
       <div className="pt-16 p-6">
         <div className="max-w-7xl mx-auto">
@@ -269,8 +278,8 @@ export default function SnowflakeSetup() {
 
                     <div className="space-y-2">
                       <Label htmlFor="cloudProvider">Cloud Provider</Label>
-                      <Select 
-                        value={config.cloudProvider} 
+                      <Select
+                        value={config.cloudProvider}
                         onValueChange={(value) => setConfig(prev => ({ ...prev, cloudProvider: value, region: '' }))}
                       >
                         <SelectTrigger className="bg-dark-input border-dark-border text-white" data-testid="select-cloud-provider">
@@ -286,8 +295,8 @@ export default function SnowflakeSetup() {
 
                     <div className="space-y-2">
                       <Label htmlFor="region">Region</Label>
-                      <Select 
-                        value={config.region} 
+                      <Select
+                        value={config.region}
                         onValueChange={(value) => setConfig(prev => ({ ...prev, region: value }))}
                       >
                         <SelectTrigger className="bg-dark-input border-dark-border text-white" data-testid="select-region">
@@ -343,8 +352,8 @@ export default function SnowflakeSetup() {
 
                     <div className="space-y-2">
                       <Label htmlFor="warehouseSize">Warehouse Size</Label>
-                      <Select 
-                        value={config.warehouseSize} 
+                      <Select
+                        value={config.warehouseSize}
                         onValueChange={(value) => setConfig(prev => ({ ...prev, warehouseSize: value }))}
                       >
                         <SelectTrigger className="bg-dark-input border-dark-border text-white" data-testid="select-warehouse-size">
@@ -454,8 +463,8 @@ export default function SnowflakeSetup() {
 
                     <div className="space-y-2">
                       <Label htmlFor="enableTimeTravel">Time Travel Retention (days)</Label>
-                      <Select 
-                        value={config.enableTimeTravel.toString()} 
+                      <Select
+                        value={config.enableTimeTravel.toString()}
                         onValueChange={(value) => setConfig(prev => ({ ...prev, enableTimeTravel: parseInt(value) }))}
                       >
                         <SelectTrigger className="bg-dark-input border-dark-border text-white" data-testid="select-time-travel">
@@ -547,7 +556,7 @@ export default function SnowflakeSetup() {
               </div>
 
               <div className="mt-6 flex justify-center">
-                <Button 
+                <Button
                   onClick={handleGenerate}
                   disabled={generateMutation.isPending}
                   className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-6 text-lg"

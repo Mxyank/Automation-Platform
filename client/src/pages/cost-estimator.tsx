@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  ArrowLeft, 
-  DollarSign, 
-  Cloud, 
-  Server, 
+import {
+  ArrowLeft,
+  DollarSign,
+  Cloud,
+  Server,
   Database as DatabaseIcon,
   HardDrive,
   Cpu,
@@ -66,7 +68,9 @@ export default function CostEstimator() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('cost_estimator');
+
   const [provider, setProvider] = useState("aws");
   const [instanceType, setInstanceType] = useState("medium");
   const [instanceCount, setInstanceCount] = useState([2]);
@@ -78,15 +82,15 @@ export default function CostEstimator() {
   const calculateEstimate = () => {
     const instance = instanceTypes.find(i => i.value === instanceType);
     const db = databaseTypes.find(d => d.value === database);
-    
+
     const computeCost = (instance?.compute || 60) * instanceCount[0];
     const storageCost = storageGB[0] * 0.1;
     const databaseCost = db?.cost || 0;
     const networkCost = bandwidthGB[0] * 0.09;
-    
+
     const total = computeCost + storageCost + databaseCost + networkCost;
     const optimizedTotal = total * 0.7;
-    
+
     const recommendations = [];
     if (instanceCount[0] > 3) {
       recommendations.push("Consider using auto-scaling to reduce costs during low traffic periods");
@@ -98,7 +102,7 @@ export default function CostEstimator() {
       recommendations.push("Use Reserved Instances for 30-40% savings on compute costs");
     }
     recommendations.push("Enable spot instances for non-critical workloads to save up to 90%");
-    
+
     setEstimate({
       compute: computeCost,
       storage: storageCost,
@@ -126,7 +130,8 @@ export default function CostEstimator() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="relative min-h-screen bg-dark-bg text-white">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Infrastructure Cost Estimator" />}
       <div className="sticky top-0 z-10 bg-dark-bg/80 backdrop-blur-md border-b border-dark-border">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
@@ -275,7 +280,7 @@ export default function CostEstimator() {
               </CardContent>
             </Card>
 
-            <Button 
+            <Button
               onClick={calculateEstimate}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-12 text-lg"
               data-testid="button-calculate"

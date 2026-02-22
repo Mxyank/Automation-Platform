@@ -12,11 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  DollarSign, 
-  TrendingDown, 
-  Cloud, 
-  Server, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  DollarSign,
+  TrendingDown,
+  Cloud,
+  Server,
   Loader2,
   ArrowDown,
   ArrowUp,
@@ -31,6 +33,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { SiAmazonwebservices, SiGooglecloud } from "react-icons/si";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface CostRecommendation {
   category: string;
@@ -71,6 +74,9 @@ interface OptimizationResult {
 
 export default function CloudOptimizer() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('cloud_optimizer');
   const [cloudConfig, setCloudConfig] = useState("");
   const [currentSpend, setCurrentSpend] = useState("");
   const [provider, setProvider] = useState<"aws" | "gcp" | "azure" | "multi">("aws");
@@ -89,6 +95,7 @@ export default function CloudOptimizer() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Optimization Failed",
         description: error.message,
@@ -141,9 +148,11 @@ export default function CloudOptimizer() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Cloud Cost Optimizer" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />

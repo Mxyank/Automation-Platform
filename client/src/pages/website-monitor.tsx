@@ -12,11 +12,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  Globe, 
-  Activity, 
-  Shield, 
-  Clock, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  Globe,
+  Activity,
+  Shield,
+  Clock,
   Zap,
   Loader2,
   CheckCircle,
@@ -32,6 +34,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface MonitorResult {
   url: string;
@@ -75,6 +78,9 @@ interface MonitorResult {
 
 export default function WebsiteMonitor() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('website_monitor');
   const [siteUrl, setSiteUrl] = useState("");
   const [checkPerformance, setCheckPerformance] = useState(true);
   const [checkSecurity, setCheckSecurity] = useState(true);
@@ -95,6 +101,7 @@ export default function WebsiteMonitor() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Analysis Failed",
         description: error.message,
@@ -112,13 +119,13 @@ export default function WebsiteMonitor() {
       });
       return;
     }
-    
+
     const checks = [];
     if (checkPerformance) checks.push("performance");
     if (checkSecurity) checks.push("security");
     if (checkSEO) checks.push("seo");
     if (checkAccessibility) checks.push("accessibility");
-    
+
     analyzeMutation.mutate({ url: siteUrl, checks });
   };
 
@@ -148,13 +155,15 @@ export default function WebsiteMonitor() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Website Monitor" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -196,9 +205,9 @@ export default function WebsiteMonitor() {
                     <Label className="text-gray-300">Analysis Options</Label>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="perf" 
-                          checked={checkPerformance} 
+                        <Checkbox
+                          id="perf"
+                          checked={checkPerformance}
                           onCheckedChange={(c) => setCheckPerformance(c as boolean)}
                         />
                         <Label htmlFor="perf" className="text-gray-300 flex items-center gap-2">
@@ -207,9 +216,9 @@ export default function WebsiteMonitor() {
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="sec" 
-                          checked={checkSecurity} 
+                        <Checkbox
+                          id="sec"
+                          checked={checkSecurity}
                           onCheckedChange={(c) => setCheckSecurity(c as boolean)}
                         />
                         <Label htmlFor="sec" className="text-gray-300 flex items-center gap-2">
@@ -218,9 +227,9 @@ export default function WebsiteMonitor() {
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="seo" 
-                          checked={checkSEO} 
+                        <Checkbox
+                          id="seo"
+                          checked={checkSEO}
                           onCheckedChange={(c) => setCheckSEO(c as boolean)}
                         />
                         <Label htmlFor="seo" className="text-gray-300 flex items-center gap-2">
@@ -229,9 +238,9 @@ export default function WebsiteMonitor() {
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="a11y" 
-                          checked={checkAccessibility} 
+                        <Checkbox
+                          id="a11y"
+                          checked={checkAccessibility}
                           onCheckedChange={(c) => setCheckAccessibility(c as boolean)}
                         />
                         <Label htmlFor="a11y" className="text-gray-300 flex items-center gap-2">
@@ -326,9 +335,9 @@ export default function WebsiteMonitor() {
                           <p className="text-gray-400 text-xs">Overall Score</p>
                         </div>
                       </div>
-                      
+
                       <p className="text-gray-300 text-sm mb-4">{result.summary}</p>
-                      
+
                       <div className="grid grid-cols-4 gap-3">
                         <div className="text-center">
                           <Gauge className={`w-5 h-5 mx-auto mb-1 ${getScoreColor(result.performance.score)}`} />

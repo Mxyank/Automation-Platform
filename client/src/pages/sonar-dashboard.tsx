@@ -6,12 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/use-auth';
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { AdminGuard } from '@/lib/admin-guard';
-import { 
-  Bug, 
-  Shield, 
+import {
+  Bug,
+  Shield,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -57,9 +59,15 @@ interface SonarIssue {
 }
 
 export default function SonarDashboard() {
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('sonar_dashboard');
+
   return (
     <AdminGuard>
-      <SonarDashboardContent />
+      <div className="relative">
+        {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Sonar Dashboard" />}
+        <SonarDashboardContent />
+      </div>
     </AdminGuard>
   );
 }
@@ -198,7 +206,7 @@ function SonarDashboardContent() {
               <XCircle className="h-4 w-4 text-red-500" />
             )}
             <AlertDescription className={`text-${metrics.overallRating === 'A' ? 'green' : 'red'}-400`}>
-              <strong>Quality Gate: {metrics.overallRating === 'A' ? 'PASSED' : 'FAILED'}</strong> - 
+              <strong>Quality Gate: {metrics.overallRating === 'A' ? 'PASSED' : 'FAILED'}</strong> -
               Overall code quality rating: {metrics.overallRating}
             </AlertDescription>
           </Alert>

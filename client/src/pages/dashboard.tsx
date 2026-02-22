@@ -14,13 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { CustomAd } from "@/components/custom-ad";
 import { ProductTour, TourWelcomeModal } from "@/components/product-tour";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { 
-  Database, 
-  Container, 
-  Brain, 
-  Plus, 
+import {
+  Database,
+  Container,
+  Brain,
+  Plus,
   Zap,
   TrendingUp,
   Clock,
@@ -53,9 +54,9 @@ import {
 } from "lucide-react";
 import type { Project } from "@shared/schema";
 import { motion } from "framer-motion";
-import { 
-  getQuickActionsByDomain, 
-  getAdvancedFeaturesByDomain, 
+import {
+  getQuickActionsByDomain,
+  getAdvancedFeaturesByDomain,
   getMonitoringToolsByDomain,
   type Domain,
   type Feature
@@ -70,8 +71,8 @@ interface UsageData {
 }
 
 const iconMap: Record<string, any> = {
-  Database, Container, Brain, Zap, DollarSign, RefreshCw, GitBranch, Shield, 
-  Rocket, Activity, BarChart3, Layers, Server, Cloud, Sparkles, Terminal, 
+  Database, Container, Brain, Zap, DollarSign, RefreshCw, GitBranch, Shield,
+  Rocket, Activity, BarChart3, Layers, Server, Cloud, Sparkles, Terminal,
   FileCode, Snowflake, Wind, Workflow, Table2, Lock, Bug, Search, Network, Fingerprint, Eye
 };
 
@@ -83,9 +84,9 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showTour, setShowTour] = useState(false);
-  
+
   const currentDomain = ((user as any)?.primaryDomain || 'devops') as Domain;
-  
+
   const { data: projects = [], isLoading: projectsLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
@@ -163,7 +164,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-dark-bg">
       <Navigation />
-      
+
       {/* Product Tour for new users */}
       <TourWelcomeModal
         isOpen={showWelcomeModal}
@@ -178,13 +179,13 @@ export default function Dashboard() {
 
       {/* Coming Soon Overlay for disabled domains */}
       {isDomainDisabled && (
-        <ComingSoonOverlay 
-          domainName={currentDomain === 'data-engineering' ? 'Data Engineering' : 
-                      currentDomain === 'cybersecurity' ? 'Cybersecurity' : currentDomain}
+        <ComingSoonOverlay
+          domainName={currentDomain === 'data-engineering' ? 'Data Engineering' :
+            currentDomain === 'cybersecurity' ? 'Cybersecurity' : currentDomain}
           message={currentDomainConfig?.comingSoonMessage}
         />
       )}
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -213,12 +214,12 @@ export default function Dashboard() {
                 </Button>
               </Link>
             </div>
-            
+
             {/* Search Bar */}
             <div className="flex items-center gap-4">
               <SearchBar />
             </div>
-            
+
             {/* Domain Switcher */}
             <div className="flex items-center justify-between bg-dark-card border border-gray-800 rounded-lg p-4">
               <div className="flex items-center gap-4">
@@ -321,10 +322,15 @@ export default function Dashboard() {
             </motion.div>
           </div>
 
+          {/* Custom Ads */}
+          <div className="mb-8">
+            <CustomAd />
+          </div>
+
           {/* Domain-based Features Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             className="mb-8"
           >
@@ -438,8 +444,8 @@ export default function Dashboard() {
                       const IconComponent = getIconComponent(tool.icon);
                       return (
                         <Link key={tool.id} href={tool.href}>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             className="w-full h-auto py-4 flex flex-col items-center gap-2 hover:bg-gray-800 transition-colors"
                             data-testid={`button-${tool.title.toLowerCase().replace(' ', '-')}`}
                           >
@@ -571,7 +577,7 @@ export default function Dashboard() {
                     <p className="text-gray-400 text-sm">
                       {isPremium ? 'Unlimited credits with Pro' : 'credits remaining'}
                     </p>
-                    
+
                     {!isPremium && stats.creditsRemaining < 5 && (
                       <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
                         <p className="text-yellow-500 text-sm font-medium">
@@ -582,7 +588,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                     )}
-                    
+
                     {!isPremium && (
                       <Link href="/pricing">
                         <Button className="w-full bg-gradient-to-r from-neon-cyan to-neon-purple text-dark-bg">
@@ -597,7 +603,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      
+
       {/* AI Chatbot */}
       <Chatbot />
     </div>

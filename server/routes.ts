@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { readFileSync, existsSync, statSync } from "fs";
 import { join } from "path";
@@ -8,7 +8,8 @@ import { db } from "./db";
 import { users, impersonationLogs } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { generateCrudApi, generateDockerfile, generateDockerCompose, generateGitHubActions } from "./services/code-generator";
-import { analyzeLogError, generateYamlFromNaturalLanguage, optimizeDockerfile, generateDevOpsResponse, getGeminiModel } from "./services/gemini";
+import { analyzeLogError, generateYamlFromNaturalLanguage, optimizeDockerfile, generateDevOpsResponse, getGeminiModel, generateAIContent } from "./services/gemini";
+import { cloudSearch, isSearchConfigured, searchWebOnly } from "./services/search-service";
 import { createPaymentOrder, processSuccessfulPayment, checkUsageLimit, deductCreditForUsage, creditPackages } from "./services/payment";
 import { logger } from "./logger";
 import { redis } from "./redis";
@@ -82,6 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   // Register admin routes
+  storage.seedFeatureSettings().catch(err => logger.error("Failed to seed feature settings", err));
   app.use("/api/admin", adminRoutes);
 
   // Push notification routes
@@ -198,6 +200,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  const requireFeature = (featureKey: string) => async (req: Request, res: Response, next: NextFunction) => {
+    const fullKey = featureKey.startsWith('feature_') ? featureKey : `feature_${featureKey}`;
+    const setting = await storage.getSiteSetting(fullKey);
+    if (setting && !setting.value) {
+      return res.status(403).json({
+        error: "Feature Disabled",
+        message: `${setting.label} is currently disabled by the administrator.`,
+        code: "FEATURE_DISABLED"
+      });
+    }
+    next();
+  };
+
   // Input validation schemas
   const crudApiValidation = [
     body('name').isLength({ min: 1, max: 100 }).withMessage('Name must be between 1 and 100 characters'),
@@ -211,6 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/generate/crud-api",
     apiRateLimit,
     enhancedRequireAuth,
+    requireFeature("api_generation"),
     requireCredits(1),
     crudApiValidation,
     async (req: Request, res: Response) => {
@@ -273,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
   // Docker Generation Routes
-  app.post("/api/generate/dockerfile", requireAuth, async (req, res) => {
+  app.post("/api/generate/dockerfile", requireAuth, requireFeature("docker_generation"), async (req, res) => {
     try {
       const { language, framework, port, baseImage, envVars } = req.body;
       const userId = req.user!.id;
@@ -309,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/generate/docker-compose", requireAuth, async (req, res) => {
+  app.post("/api/generate/docker-compose", requireAuth, requireFeature("docker_generation"), async (req, res) => {
     try {
       const { services } = req.body;
       const userId = req.user!.id;
@@ -345,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CI/CD Generation Routes
-  app.post("/api/generate/github-actions", requireAuth, async (req, res) => {
+  app.post("/api/generate/github-actions", requireAuth, requireFeature("cicd_generation"), async (req, res) => {
     try {
       const { language, framework, testCommand } = req.body;
       const userId = req.user!.id;
@@ -382,7 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Assistant Routes
-  app.post("/api/ai/analyze-logs", requireAuth, async (req, res) => {
+  app.post("/api/ai/analyze-logs", requireAuth, requireFeature("ai_assistance"), async (req, res) => {
     try {
       const { logText } = req.body;
       const userId = req.user!.id;
@@ -403,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/ai/generate-yaml", requireAuth, async (req, res) => {
+  app.post("/api/ai/generate-yaml", requireAuth, requireFeature("ai_assistance"), async (req, res) => {
     try {
       const { description } = req.body;
       const userId = req.user!.id;
@@ -424,7 +440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/ai/optimize-dockerfile", requireAuth, async (req, res) => {
+  app.post("/api/ai/optimize-dockerfile", requireAuth, requireFeature("ai_assistance"), async (req, res) => {
     try {
       const { dockerfile } = req.body;
       const userId = req.user!.id;
@@ -445,8 +461,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DevOps AI Query Endpoint - Premium Feature
-  app.post("/api/ai/devops-query", requireAuth, async (req, res) => {
+  // DevOps AI Query Endpoint - with Search API fallback
+  app.post("/api/ai/devops-query", requireAuth, requireFeature("ai_assistance"), async (req, res) => {
     try {
       const { query } = req.body;
       const userId = req.user!.id;
@@ -459,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeSubscription = await storage.getActiveSubscription(userId);
       const isPremium = activeSubscription || req.user!.isPremium;
 
-      // If not premium, check usage limit - costs 1 credit per query
+      // If not premium, check usage limit
       if (!isPremium) {
         if (!(await checkUsageLimit(userId, "ai_assistance"))) {
           return res.status(402).json({
@@ -470,25 +486,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Generate response using Gemini optimized for DevOps/Cloud queries
+      // Generate response — tries Gemini → OpenAI → SearchAPI.io automatically
       const answer = await generateDevOpsResponse(query);
+
+      // Fetch web sources for display (non-blocking)
+      let webSources: any[] = [];
+      if (isSearchConfigured()) {
+        try {
+          const results = await searchWebOnly(query);
+          webSources = results.slice(0, 6).map((r: any) => ({
+            title: r.title,
+            url: r.url,
+            description: r.description,
+            source: r.source,
+            favicon: r.favicon,
+          }));
+        } catch {
+          // Non-fatal — skip web sources
+        }
+      }
 
       // Only deduct credits for non-premium users
       if (!isPremium) {
         await deductCreditForUsage(userId, "ai_assistance");
       }
 
-      logger.info(`DevOps AI query processed for user ${userId} (premium: ${isPremium}): ${query.substring(0, 50)}...`);
+      logger.info(`DevOps AI query for user ${userId}: "${query.substring(0, 50)}..."`);
 
       res.json({
         answer,
         query,
         timestamp: new Date().toISOString(),
-        isPremium
+        isPremium,
+        webSources
       });
     } catch (error) {
+      const errorMessage = (error as Error).message || 'An unexpected error occurred';
       logger.error('DevOps AI query error', error);
-      res.status(500).json({ message: (error as Error).message });
+
+      if (errorMessage.startsWith('AI_NOT_CONFIGURED:')) {
+        return res.status(503).json({ message: errorMessage, errorType: 'AI_NOT_CONFIGURED' });
+      }
+      if (errorMessage.startsWith('QUOTA_EXCEEDED:')) {
+        return res.status(429).json({ message: errorMessage, errorType: 'QUOTA_EXCEEDED' });
+      }
+
+      res.status(500).json({ message: errorMessage });
     }
   });
 
@@ -652,9 +695,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const { key } = req.params;
       const { value } = req.body;
-      if (typeof value !== 'boolean') {
-        return res.status(400).json({ message: "Value must be a boolean" });
+
+      // Validate value type matches supported types
+      if (typeof value !== 'boolean' && typeof value !== 'string' && typeof value !== 'number') {
+        return res.status(400).json({ message: "Value must be a boolean, string, or number" });
       }
+
       const updated = await storage.updateSiteSetting(key, value, user.id);
       res.json(updated);
     } catch (error) {
@@ -792,11 +838,7 @@ Provide complete Kubernetes YAML manifests that can be applied directly.`;
         return res.status(400).json({ message: "Invalid migration type" });
       }
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       await deductCreditForUsage(userId, "migration_assistant");
 
@@ -854,11 +896,7 @@ Provide a comprehensive deployment simulation analysis in the following JSON for
 
 Be thorough and realistic in your analysis.`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -916,11 +954,7 @@ Return JSON:
   "stats": {"totalIssues": N, "critical": N, "high": N, "medium": N, "low": N}
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -982,11 +1016,7 @@ Return JSON:
   "improvements": ["list of improvements"]
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -1007,7 +1037,7 @@ Return JSON:
   });
 
   // Secret Scanner
-  app.post("/api/ai/secret-scan", requireAuth, async (req, res) => {
+  app.post("/api/ai/secret-scan", requireAuth, requireFeature("secret_scanner"), async (req, res) => {
     try {
       const { code, repoUrl, autoRemediate } = req.body;
       const userId = req.user!.id;
@@ -1043,11 +1073,7 @@ Return JSON:
   "securityScore": 0-100
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -1068,7 +1094,7 @@ Return JSON:
   });
 
   // Multi-Cloud Cost Optimizer
-  app.post("/api/ai/cloud-optimize", requireAuth, async (req, res) => {
+  app.post("/api/ai/cloud-optimize", requireAuth, requireFeature("cloud_optimizer"), async (req, res) => {
     try {
       const { config, currentSpend, provider } = req.body;
       const userId = req.user!.id;
@@ -1106,11 +1132,7 @@ Provide optimization recommendations in JSON:
   "summary": "brief summary"
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -1131,7 +1153,7 @@ Provide optimization recommendations in JSON:
   });
 
   // Chat with Infrastructure
-  app.post("/api/ai/infra-chat", requireAuth, async (req, res) => {
+  app.post("/api/ai/infra-chat", requireAuth, requireFeature("infra_chat"), async (req, res) => {
     try {
       const { query } = req.body;
       const userId = req.user!.id;
@@ -1167,11 +1189,7 @@ Return JSON:
 
 Be helpful, concise, and practical.`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -1192,7 +1210,7 @@ Be helpful, concise, and practical.`;
   });
 
   // AI Blueprint Generator
-  app.post("/api/ai/blueprint", requireAuth, async (req, res) => {
+  app.post("/api/ai/blueprint", requireAuth, requireFeature("blueprint_generator"), async (req, res) => {
     try {
       const { requirements, projectType, cloudProvider, scale } = req.body;
       const userId = req.user!.id;
@@ -1250,11 +1268,7 @@ Generate a comprehensive architecture in JSON:
   "summary": "executive summary"
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -1283,7 +1297,7 @@ Generate a comprehensive architecture in JSON:
   });
 
   // AI Post-Mortem Generator
-  app.post("/api/ai/postmortem", requireAuth, async (req, res) => {
+  app.post("/api/ai/postmortem", requireAuth, requireFeature("postmortem_generator"), async (req, res) => {
     try {
       const { description, url, logs, severity } = req.body;
       const userId = req.user!.id;
@@ -1332,11 +1346,7 @@ Generate a detailed post-mortem in JSON:
   "fullReport": "complete markdown formatted report"
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -1371,7 +1381,7 @@ Generate a detailed post-mortem in JSON:
   });
 
   // AI Environment Replicator (Magic Sandbox)
-  app.post("/api/ai/env-replicate", requireAuth, async (req, res) => {
+  app.post("/api/ai/env-replicate", requireAuth, requireFeature("env_replicator"), async (req, res) => {
     try {
       const { repoUrl, branch, includeTests, includeSeedData } = req.body;
       const userId = req.user!.id;
@@ -1416,11 +1426,7 @@ Return JSON:
   "summary": "brief description"
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -1453,7 +1459,7 @@ Return JSON:
   });
 
   // AI DBA (Database Optimizer)
-  app.post("/api/ai/db-optimize", requireAuth, async (req, res) => {
+  app.post("/api/ai/db-optimize", requireAuth, requireFeature("database_optimizer"), async (req, res) => {
     try {
       const { slowQueries, schemaDDL, engine } = req.body;
       const userId = req.user!.id;
@@ -1486,11 +1492,7 @@ Provide comprehensive database optimization analysis in JSON:
   "queryBottlenecks": [{"query": "problematic query", "bottleneck": "issue", "prediction": "will get worse", "mitigation": "fix"}]
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -1519,7 +1521,7 @@ Provide comprehensive database optimization analysis in JSON:
   });
 
   // AI Website Analyzer (Monitoring & Analytics) - With REAL HTTP probing
-  app.post("/api/ai/website-analyze", requireAuth, async (req, res) => {
+  app.post("/api/ai/website-analyze", requireAuth, requireFeature("website_monitor"), async (req, res) => {
     try {
       const { url, checks } = req.body;
       const userId = req.user!.id;
@@ -1693,11 +1695,7 @@ Return JSON with this structure:
   "summary": "brief summary based on real findings"
 }`;
 
-      const model = getGeminiModel("gemini-1.5-flash");
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const text = await generateAIContent(prompt);
 
       let parsed;
       try {
@@ -2235,7 +2233,7 @@ Return JSON with this structure:
   });
 
   // Script generation routes  
-  app.post('/api/jenkins/generate', requireAuth, apiRateLimit, requireCredits(1), async (req, res) => {
+  app.post('/api/jenkins/generate', requireAuth, requireFeature("cicd_generation"), apiRateLimit, requireCredits(1), async (req, res) => {
     try {
       const { generateJenkinsPipeline } = await import('./services/jenkins-generator');
       const config = req.body;
@@ -2255,7 +2253,7 @@ Return JSON with this structure:
     }
   });
 
-  app.post('/api/ansible/generate', requireAuth, apiRateLimit, requireCredits(1), async (req, res) => {
+  app.post('/api/ansible/generate', requireAuth, requireFeature("ansible_generation"), apiRateLimit, requireCredits(1), async (req, res) => {
     try {
       const { generateAnsiblePlaybook } = await import('./services/ansible-generator');
       const config = req.body;
@@ -2275,7 +2273,7 @@ Return JSON with this structure:
     }
   });
 
-  app.post('/api/sonarqube/setup', requireAuth, apiRateLimit, requireCredits(1), async (req, res) => {
+  app.post('/api/sonarqube/setup', requireAuth, requireFeature("sonarqube_setup"), apiRateLimit, requireCredits(1), async (req, res) => {
     try {
       const { generateSonarQubeSetup } = await import('./services/sonarqube-generator');
       const config = req.body;
@@ -2296,7 +2294,7 @@ Return JSON with this structure:
   });
 
   // Snowflake setup generation
-  app.post('/api/snowflake/generate', requireAuth, apiRateLimit, requireCredits(1), async (req, res) => {
+  app.post('/api/snowflake/generate', requireAuth, requireFeature("snowflake_setup"), apiRateLimit, requireCredits(1), async (req, res) => {
     try {
       const { generateSnowflakeSetup } = await import('./services/snowflake-generator');
       const config = req.body;
@@ -2317,7 +2315,7 @@ Return JSON with this structure:
   });
 
   // Airflow DAG generation
-  app.post('/api/airflow/generate', requireAuth, apiRateLimit, requireCredits(1), async (req, res) => {
+  app.post('/api/airflow/generate', requireAuth, requireFeature("airflow_generation"), apiRateLimit, requireCredits(1), async (req, res) => {
     try {
       const { generateAirflowDAG } = await import('./services/airflow-generator');
       const config = req.body;
@@ -2674,6 +2672,55 @@ Be concise, practical, and provide code examples when helpful. Focus on producti
     } catch (error) {
       logger.error('Chatbot error', error);
       res.status(500).json({ error: 'Failed to generate response' });
+    }
+  });
+
+  // AI Cloud Search Engine
+  app.post("/api/ai/cloud-search", requireAuth, requireFeature("cloud_search"), async (req, res) => {
+    try {
+      const { query, category } = req.body;
+      const userId = req.user!.id;
+
+      if (!query || typeof query !== 'string' || query.trim().length === 0) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      if (!isSearchConfigured()) {
+        return res.status(503).json({
+          message: "Search service is not configured. Please set SEARCH_API in environment variables.",
+          errorType: "SEARCH_NOT_CONFIGURED"
+        });
+      }
+
+      // Check usage limit
+      if (!(await checkUsageLimit(userId, "ai_assistance"))) {
+        return res.status(402).json({
+          message: "Free limit reached. Please purchase credits to continue.",
+          feature: "ai_assistance"
+        });
+      }
+
+      const result = await cloudSearch(query.trim(), category);
+      await deductCreditForUsage(userId, "ai_assistance");
+
+      logger.info(`Cloud search for user ${userId}: "${query.substring(0, 60)}"`);
+
+      res.json({
+        ...result,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      const errorMessage = (error as Error).message || 'Search failed';
+      logger.error('Cloud search error', error);
+
+      if (errorMessage.startsWith('SEARCH_NOT_CONFIGURED:')) {
+        return res.status(503).json({ message: errorMessage, errorType: 'SEARCH_NOT_CONFIGURED' });
+      }
+      if (errorMessage.startsWith('SEARCH_ERROR:')) {
+        return res.status(502).json({ message: errorMessage, errorType: 'SEARCH_ERROR' });
+      }
+
+      res.status(500).json({ message: errorMessage });
     }
   });
 

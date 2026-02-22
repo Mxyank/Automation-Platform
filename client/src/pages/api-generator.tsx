@@ -13,6 +13,9 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Zap, ArrowLeft } from "lucide-react";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 
 interface ApiConfig {
   name: string;
@@ -25,9 +28,15 @@ interface ApiConfig {
 export default function ApiGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  
+  const { isEnabled } = useFeatures();
+
+  if (!isEnabled("api_generation")) {
+    return <FeatureDisabledOverlay featureName="API Generator" />;
+  }
+
   const [config, setConfig] = useState<ApiConfig>({
     name: "",
     database: "postgresql",
@@ -35,7 +44,7 @@ export default function ApiGenerator() {
     oauth: false,
     framework: "express",
   });
-  
+
   const [generatedCode, setGeneratedCode] = useState<string>("");
 
   const generateMutation = useMutation({
@@ -53,27 +62,12 @@ export default function ApiGenerator() {
       });
     },
     onError: (error: any) => {
-      if (error.message.includes("402")) {
-        toast({
-          title: "Credits Required",
-          description: "You need to purchase credits to use this feature.",
-          variant: "destructive",
-          action: (
-            <Button 
-              onClick={() => setLocation("/checkout/starter")}
-              className="bg-neon-cyan text-dark-bg"
-            >
-              Buy Credits
-            </Button>
-          ),
-        });
-      } else {
-        toast({
-          title: "Generation Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      if (checkForUpgrade(error)) return;
+      toast({
+        title: "Generation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -95,8 +89,9 @@ export default function ApiGenerator() {
 
   return (
     <div className="min-h-screen bg-dark-bg">
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
@@ -109,7 +104,7 @@ export default function ApiGenerator() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
-            
+
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-br from-neon-cyan to-blue-500 rounded-lg flex items-center justify-center">
                 <Zap className="w-6 h-6 text-white" />

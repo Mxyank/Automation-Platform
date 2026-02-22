@@ -12,11 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  FileWarning, 
-  Clock, 
-  AlertCircle, 
-  Lightbulb, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  FileWarning,
+  Clock,
+  AlertCircle,
+  Lightbulb,
   Loader2,
   Copy,
   Download,
@@ -32,6 +34,7 @@ import {
   Calendar
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface PostmortemResult {
   incidentTitle: string;
@@ -68,6 +71,9 @@ interface PostmortemResult {
 
 export default function PostmortemGenerator() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('postmortem');
   const [incidentDescription, setIncidentDescription] = useState("");
   const [incidentUrl, setIncidentUrl] = useState("");
   const [logs, setLogs] = useState("");
@@ -87,6 +93,7 @@ export default function PostmortemGenerator() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Generation Failed",
         description: error.message,
@@ -160,9 +167,11 @@ export default function PostmortemGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Post-Mortem Generator" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />
@@ -340,7 +349,7 @@ We rolled back the deployment at 4:15 PM and service was restored.`}
                         </div>
                       </div>
                       <p className="text-gray-300">{result.summary}</p>
-                      
+
                       <div className="grid grid-cols-2 gap-4 mt-4">
                         <div className="bg-gray-800/50 rounded-lg p-3">
                           <p className="text-gray-400 text-xs">Duration</p>
@@ -409,7 +418,7 @@ We rolled back the deployment at 4:15 PM and service was restored.`}
                           <p className="text-gray-300">{result.whatHappened}</p>
                         </CardContent>
                       </Card>
-                      
+
                       <Card className="bg-red-500/10 border-red-500/30">
                         <CardHeader>
                           <CardTitle className="text-red-400 text-lg flex items-center gap-2">
@@ -421,7 +430,7 @@ We rolled back the deployment at 4:15 PM and service was restored.`}
                           <p className="text-gray-300">{result.rootCause}</p>
                         </CardContent>
                       </Card>
-                      
+
                       <Card className="bg-dark-card border-gray-800">
                         <CardHeader>
                           <CardTitle className="text-white text-lg">Impact</CardTitle>
@@ -467,7 +476,7 @@ We rolled back the deployment at 4:15 PM and service was restored.`}
                           </ul>
                         </CardContent>
                       </Card>
-                      
+
                       <Card className="bg-red-500/10 border-red-500/30">
                         <CardHeader>
                           <CardTitle className="text-red-400 text-lg flex items-center gap-2">

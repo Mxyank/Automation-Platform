@@ -3,14 +3,16 @@ import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   ArrowRight,
   Container,
   Server,
@@ -24,6 +26,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 type MigrationType = "dockerize" | "vm-to-container" | "compose-to-k8s";
 
@@ -113,8 +116,11 @@ volumes:
 export default function MigrationAssistant() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
   const queryClient = useQueryClient();
-  
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('migration_assistant');
+
   const [activeTab, setActiveTab] = useState<MigrationType>("dockerize");
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
@@ -167,6 +173,7 @@ export default function MigrationAssistant() {
   if (!user) {
     return (
       <div className="min-h-screen bg-dark-bg text-white flex items-center justify-center">
+        <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
         <Card className="p-8 text-center bg-dark-card border-dark-border">
           <RefreshCw className="w-16 h-16 mx-auto mb-4 text-neon-purple" />
           <h2 className="text-2xl font-bold mb-4">Sign In Required</h2>
@@ -180,7 +187,8 @@ export default function MigrationAssistant() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="relative min-h-screen bg-dark-bg text-white">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Migration Assistant" />}
       <div className="sticky top-0 z-10 bg-dark-bg/80 backdrop-blur-md border-b border-dark-border">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
@@ -206,8 +214,8 @@ export default function MigrationAssistant() {
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as MigrationType); setInput(""); setOutput(""); }}>
           <TabsList className="grid w-full grid-cols-3 bg-dark-card border border-dark-border h-auto p-1">
             {migrationTypes.map((type) => (
-              <TabsTrigger 
-                key={type.id} 
+              <TabsTrigger
+                key={type.id}
                 value={type.id}
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 py-4"
                 data-testid={`tab-${type.id}`}
@@ -244,7 +252,7 @@ export default function MigrationAssistant() {
                         data-testid="input-config"
                       />
                     </div>
-                    <Button 
+                    <Button
                       onClick={handleMigrate}
                       disabled={migrationMutation.isPending || !input.trim()}
                       className={`w-full bg-gradient-to-r ${type.color} hover:opacity-90 h-12`}

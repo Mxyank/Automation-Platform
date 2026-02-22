@@ -12,11 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  Layers, 
-  Cloud, 
-  GitBranch, 
-  Shield, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  Layers,
+  Cloud,
+  GitBranch,
+  Shield,
   Loader2,
   Copy,
   Download,
@@ -30,6 +32,7 @@ import {
   CheckCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface BlueprintResult {
   projectName: string;
@@ -60,6 +63,9 @@ interface BlueprintResult {
 
 export default function BlueprintGenerator() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('blueprint_generator');
   const [requirements, setRequirements] = useState("");
   const [projectType, setProjectType] = useState("web-app");
   const [cloudProvider, setCloudProvider] = useState("aws");
@@ -79,6 +85,7 @@ export default function BlueprintGenerator() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Generation Failed",
         description: error.message,
@@ -123,9 +130,11 @@ export default function BlueprintGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Blueprint Generator" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />
@@ -341,7 +350,7 @@ I want to build a scalable e-commerce platform in AWS with:
                           </pre>
                         </CardContent>
                       </Card>
-                      
+
                       <div className="space-y-2">
                         <h4 className="text-white font-medium">Components</h4>
                         {result.architecture.components.map((comp, index) => (

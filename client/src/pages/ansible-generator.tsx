@@ -11,10 +11,10 @@ import { useAuth } from '@/hooks/use-auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Settings, 
-  Download, 
-  Copy, 
+import {
+  Settings,
+  Download,
+  Copy,
   Server,
   Database,
   Shield,
@@ -22,6 +22,9 @@ import {
   Monitor,
   Package
 } from 'lucide-react';
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 
 interface AnsibleConfig {
   playbookName: string;
@@ -36,7 +39,13 @@ interface AnsibleConfig {
 export default function AnsibleGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
   const queryClient = useQueryClient();
+  const { isEnabled } = useFeatures();
+
+  if (!isEnabled("ansible_generation")) {
+    return <FeatureDisabledOverlay featureName="Ansible Setup" />;
+  }
   const [config, setConfig] = useState<AnsibleConfig>({
     playbookName: '',
     targetHosts: 'all',
@@ -65,6 +74,7 @@ export default function AnsibleGenerator() {
       });
     },
     onError: (error: any) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Generation Failed",
         description: error.message || "Failed to generate Ansible playbook",
@@ -115,7 +125,7 @@ export default function AnsibleGenerator() {
   const updateVariable = (index: number, field: 'key' | 'value', value: string) => {
     setConfig(prev => ({
       ...prev,
-      variables: prev.variables.map((variable, i) => 
+      variables: prev.variables.map((variable, i) =>
         i === index ? { ...variable, [field]: value } : variable
       )
     }));
@@ -130,6 +140,7 @@ export default function AnsibleGenerator() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-white p-6">
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -403,7 +414,7 @@ export default function AnsibleGenerator() {
                 <CardContent>
                   <ScrollArea className="h-64 w-full">
                     <pre className="bg-gray-900 p-4 rounded-lg text-xs text-gray-300 whitespace-pre-wrap">
-{`---
+                      {`---
 - name: Web Server Setup
   hosts: webservers
   remote_user: ubuntu
@@ -440,7 +451,7 @@ export default function AnsibleGenerator() {
                 <CardContent>
                   <ScrollArea className="h-64 w-full">
                     <pre className="bg-gray-900 p-4 rounded-lg text-xs text-gray-300 whitespace-pre-wrap">
-{`---
+                      {`---
 - name: Security Hardening
   hosts: all
   remote_user: ubuntu

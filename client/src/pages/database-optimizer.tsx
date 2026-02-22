@@ -11,11 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  Database, 
-  Zap, 
-  AlertTriangle, 
-  CheckCircle, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  Database,
+  Zap,
+  AlertTriangle,
+  CheckCircle,
   Loader2,
   Copy,
   TrendingUp,
@@ -28,6 +30,7 @@ import {
   Settings
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface OptimizationResult {
   summary: string;
@@ -70,6 +73,9 @@ interface OptimizationResult {
 
 export default function DatabaseOptimizer() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('database_optimizer');
   const [slowQueries, setSlowQueries] = useState("");
   const [schemaDDL, setSchemaDDL] = useState("");
   const [engine, setEngine] = useState("postgresql");
@@ -88,6 +94,7 @@ export default function DatabaseOptimizer() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Analysis Failed",
         description: error.message,
@@ -133,13 +140,15 @@ export default function DatabaseOptimizer() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Database Optimizer" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

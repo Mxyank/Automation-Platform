@@ -12,12 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { 
-  HelpCircle, 
-  Plus, 
-  MessageSquare, 
-  Clock, 
-  CheckCircle, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  HelpCircle,
+  Plus,
+  MessageSquare,
+  Clock,
+  CheckCircle,
   AlertCircle,
   Send,
   RefreshCw,
@@ -66,6 +68,8 @@ type CreateTicketForm = z.infer<typeof createTicketSchema>;
 export default function Helpdesk() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('helpdesk');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -169,9 +173,10 @@ export default function Helpdesk() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Help Center" />}
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8 flex items-center justify-between">
@@ -280,11 +285,10 @@ export default function Helpdesk() {
                             className={`flex ${msg.authorRole === "user" ? "justify-end" : "justify-start"}`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-lg p-3 ${
-                                msg.authorRole === "user"
+                              className={`max-w-[80%] rounded-lg p-3 ${msg.authorRole === "user"
                                   ? "bg-neon-cyan/20 border border-neon-cyan/30"
                                   : "bg-gray-800 border border-gray-700"
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-2 mb-1">
                                 {msg.authorRole === "admin" ? (

@@ -7,10 +7,16 @@ import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CustomAd } from "@/components/custom-ad";
 
 interface SiteSetting {
+  id: number;
   key: string;
   value: boolean;
+  stringValue?: string;
+  numberValue?: number;
+  label: string;
+  description?: string;
 }
 import {
   Database,
@@ -20,29 +26,35 @@ import {
   GitBranch,
   Zap,
   Check,
-  Play,
-  ArrowRight,
-  Cloud,
   Star,
-  Users,
+  Crown,
+  Sparkles,
+  CreditCard,
+  ArrowRight,
   Shield,
+  Clock,
+  Users,
   Rocket,
+  Tag,
+  Gift,
+  Flame,
+  Github,
+  Twitter,
+  Linkedin,
+  Copy,
+  Play,
+  Cloud,
   Globe,
   Layers,
   Settings,
   Download,
-  Copy,
   Terminal,
   Award,
   Timer,
   TrendingUp,
   DollarSign,
   ChevronRight,
-  Github,
-  Twitter,
-  Linkedin,
   BookOpen,
-  Sparkles,
   Cpu,
   Server,
   Lock,
@@ -52,7 +64,10 @@ import {
   Webhook,
   FileCode,
   Box,
-  Puzzle
+  Puzzle,
+  CheckCircle,
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 
 const codeExamples = {
@@ -177,12 +192,10 @@ const CodeBlock = ({ code, title, language = "javascript", className = "", isAct
 
   // Typing animation effect for Quick Start tab
   useEffect(() => {
-    if (title === 'quickStart.js') {
-      // Always start typing animation for Quick Start immediately
+    if (title === 'quickStart.js' && isActive) { // Only type if it's the active quickStart tab
       setIsTyping(true);
       setDisplayedCode('');
 
-      // Add a small delay before starting typing
       const startDelay = setTimeout(() => {
         let currentIndex = 0;
         const typingInterval = setInterval(() => {
@@ -193,10 +206,10 @@ const CodeBlock = ({ code, title, language = "javascript", className = "", isAct
             setIsTyping(false);
             clearInterval(typingInterval);
           }
-        }, 25); // Faster typing speed
+        }, 25);
 
         return () => clearInterval(typingInterval);
-      }, 800); // Delay before typing starts
+      }, 800);
 
       return () => {
         clearTimeout(startDelay);
@@ -205,7 +218,7 @@ const CodeBlock = ({ code, title, language = "javascript", className = "", isAct
       setDisplayedCode(code);
       setIsTyping(false);
     }
-  }, [code, title]);
+  }, [code, title, isActive]);
 
   return (
     <div className={`bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden backdrop-blur-sm ${className}`}>
@@ -242,16 +255,21 @@ const CodeBlock = ({ code, title, language = "javascript", className = "", isAct
 export default function LandingPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState('quickStart');
-  const { scrollY } = useScroll();
+  const { scrollYProgress, scrollY } = useScroll();
 
-  // Fetch site settings for Product Hunt badge
-  const { data: siteSettings = [] } = useQuery<SiteSetting[]>({
-    queryKey: ["/api/site-settings"],
+  const { data: settings } = useQuery<SiteSetting[]>({
+    queryKey: ['/api/site-settings'],
   });
 
-  const productHuntSetting = siteSettings.find(s => s.key === 'producthunt_live');
-  const isProductHuntLive = productHuntSetting ? productHuntSetting.value : true;
+  const getSetting = (key: string) => settings?.find(s => s.key === key);
+  const isSaleActive = getSetting('sale_active')?.value || false;
+  const salePercentage = getSetting('sale_percentage')?.numberValue || 20;
+  const saleDescription = `${salePercentage}% DISCOUNT ACTIVE!`;
+  const promoBanner = getSetting('promo_banner_text')?.stringValue || '';
+  const isPromoActive = getSetting('promo_banner_active')?.value || false;
+  const isProductHuntLive = true;
+
+  const [activeCodeExample, setActiveCodeExample] = useState("quickStart");
 
   // Enhanced parallax effects
   const y1 = useTransform(scrollY, [0, 500], [0, 150]);
@@ -269,6 +287,55 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-dark-bg text-white">
       <Navigation />
+
+      {/* Dynamic Promotion Banner */}
+      <AnimatePresence>
+        {isPromoActive && promoBanner && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center py-2 text-sm font-medium z-[60] relative"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              {promoBanner}
+              <Sparkles className="w-4 h-4" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sale Notification */}
+      <AnimatePresence>
+        {isSaleActive && (
+          <motion.div
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="fixed bottom-6 right-6 z-50 max-w-sm pointer-events-none"
+          >
+            <div className="bg-dark-card border-2 border-neon-purple p-4 rounded-xl shadow-2xl pointer-events-auto">
+              <div className="flex items-start gap-3">
+                <div className="bg-neon-purple/20 p-2 rounded-lg">
+                  <Flame className="w-6 h-6 text-neon-purple" />
+                </div>
+                <div>
+                  <h4 className="text-white font-bold">{saleDescription}</h4>
+                  <p className="text-gray-400 text-sm mt-1">
+                    Get <span className="text-neon-purple font-bold">{salePercentage}% OFF</span> on all credit packs for a limited time!
+                  </p>
+                  <Button
+                    className="mt-3 w-full bg-neon-purple hover:bg-neon-purple/80 text-white text-xs h-8"
+                    onClick={() => setLocation('/pricing')}
+                  >
+                    Claim Discount <ArrowRight className="w-3 h-3 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Product Hunt Badge - Fixed Position */}
       {isProductHuntLive && (
@@ -385,6 +452,7 @@ export default function LandingPage() {
 
                 <Button
                   variant="outline"
+                  onClick={() => window.open("https://github.com/Mxyank/Automation-Platform", "_blank")}
                   className="border-gray-700 text-white hover:border-gray-600 px-8 py-3 rounded-lg font-medium transition-all duration-200"
                 >
                   <Github className="mr-2 w-4 h-4" />
@@ -415,43 +483,72 @@ export default function LandingPage() {
               <div className="space-y-4">
                 {/* Tab Navigation */}
                 <div className="flex space-x-1 bg-gray-900/50 backdrop-blur-sm rounded-lg p-1 border border-gray-800">
-                  {Object.keys(codeExamples).map((tab) => (
-                    <Button
-                      key={tab}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setActiveTab(tab)}
-                      className={`${activeTab === tab
-                        ? 'bg-white text-black'
-                        : 'text-gray-400 hover:text-white'
-                        } transition-all duration-200 rounded-md px-4 py-2 text-sm font-medium`}
-                    >
-                      {tab === 'quickStart' && 'Quick Start'}
-                      {tab === 'apiGeneration' && 'API Generation'}
-                      {tab === 'dockerGeneration' && 'Docker'}
-                      {tab === 'cicdGeneration' && 'CI/CD'}
-                      {tab === 'aiAssistant' && 'AI Assistant'}
-                    </Button>
-                  ))}
+                  <button
+                    onClick={() => setActiveCodeExample("quickStart")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeCodeExample === "quickStart"
+                      ? "bg-neon-purple text-white shadow-lg shadow-neon-purple/20"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                      }`}
+                  >
+                    Quick Start
+                  </button>
+                  <button
+                    onClick={() => setActiveCodeExample("apiGeneration")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeCodeExample === "apiGeneration"
+                      ? "bg-neon-purple text-white shadow-lg shadow-neon-purple/20"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                      }`}
+                  >
+                    API Generation
+                  </button>
+                  <button
+                    onClick={() => setActiveCodeExample("dockerGeneration")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeCodeExample === "dockerGeneration"
+                      ? "bg-neon-purple text-white shadow-lg shadow-neon-purple/20"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                      }`}
+                  >
+                    Docker
+                  </button>
+                  <button
+                    onClick={() => setActiveCodeExample("cicdGeneration")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeCodeExample === "cicdGeneration"
+                      ? "bg-neon-purple text-white shadow-lg shadow-neon-purple/20"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                      }`}
+                  >
+                    CI/CD
+                  </button>
+                  <button
+                    onClick={() => setActiveCodeExample("aiAssistant")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeCodeExample === "aiAssistant"
+                      ? "bg-neon-purple text-white shadow-lg shadow-neon-purple/20"
+                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                      }`}
+                  >
+                    AI Assistant
+                  </button>
                 </div>
 
                 {/* Code Block with Animation */}
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <CodeBlock
-                      code={codeExamples[activeTab as keyof typeof codeExamples]}
-                      title={`${activeTab}.js`}
-                      className="min-h-[400px]"
-                    />
-                  </motion.div>
-                </AnimatePresence>
-
+                <div className="relative min-h-[300px]">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeCodeExample}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <CodeBlock
+                        code={codeExamples[activeCodeExample as keyof typeof codeExamples]}
+                        title={`${activeCodeExample}.js`}
+                        language="javascript"
+                        isActive={true}
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
                 {/* Feature Tags */}
                 <motion.div
                   className="flex flex-wrap gap-2"
@@ -475,6 +572,12 @@ export default function LandingPage() {
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+      {/* Custom Ads Section */}
+      <section className="py-12 bg-dark-bg/50 px-4">
+        <div className="max-w-4xl mx-auto">
+          <CustomAd />
         </div>
       </section>
 
@@ -1073,13 +1176,13 @@ jobs: ...`}</code>
                 © 2024 Prometix. All rights reserved.
               </div>
               <div className="flex items-center space-x-6 mt-4 md:mt-0">
-                <a href="#" className="text-gray-400 hover:text-neon-cyan transition-colors">
+                <a href="https://github.com/Mxyank/Automation-Platform" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-neon-cyan transition-colors">
                   <Github className="w-5 h-5" />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-neon-cyan transition-colors">
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-neon-cyan transition-colors">
                   <Twitter className="w-5 h-5" />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-neon-cyan transition-colors">
+                <a href="https://www.linkedin.com/in/mayank-agrawal-bb04901b7/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-neon-cyan transition-colors">
                   <Linkedin className="w-5 h-5" />
                 </a>
               </div>

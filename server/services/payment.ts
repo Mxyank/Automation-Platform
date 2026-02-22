@@ -25,7 +25,7 @@ export const creditPackages: CreditPackage[] = [
   },
   {
     id: "pro",
-    name: "Pro Pack", 
+    name: "Pro Pack",
     credits: 10,
     price: 14900, // ₹149
   },
@@ -120,11 +120,8 @@ export async function checkUsageLimit(userId: number, featureName: string): Prom
   const user = await storage.getUser(userId);
   if (!user) return false;
 
-  const usage = await storage.getUsage(userId, featureName);
-  const freeLimit = 1;
-
-  // Check if user has exceeded free limit and has no credits
-  if (usage && usage.usedCount >= freeLimit && user.credits === 0) {
+  // Block if user has 0 credits
+  if (user.credits <= 0) {
     return false;
   }
 
@@ -135,18 +132,13 @@ export async function deductCreditForUsage(userId: number, featureName: string):
   const user = await storage.getUser(userId);
   if (!user) throw new Error("User not found");
 
-  const usage = await storage.getUsage(userId, featureName);
-  const freeLimit = 1;
-
-  // If user has exceeded free limit, deduct credit
-  if (usage && usage.usedCount >= freeLimit) {
-    if (user.credits > 0) {
-      await storage.updateUserCredits(userId, user.credits - 1);
-    } else {
-      throw new Error("Insufficient credits");
-    }
+  // Always deduct 1 credit per usage
+  if (user.credits > 0) {
+    await storage.updateUserCredits(userId, user.credits - 1);
+  } else {
+    throw new Error("Insufficient credits");
   }
 
-  // Increment usage
+  // Increment usage count for tracking
   await storage.incrementUsage(userId, featureName);
 }

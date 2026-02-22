@@ -23,14 +23,36 @@
   --destructive-foreground: hsl(0, 0%, 98%);
   --ring: hsl(240, 4.9%, 83.9%);
   --radius: 0.5rem;
-  
+
   /* Custom colors for neon theme */
   --neon-cyan: hsl(186, 100%, 50%);
   --neon-green: hsl(146, 100%, 50%);
   --neon-purple: hsl(258, 78%, 59%);
-  --dark-bg: hsl(240, 10%, 4%);
-  --dark-card: hsl(0, 0%, 7%);
-  --dark-border: hsl(240, 3%, 11%);
+  --dark-bg: var(--background);
+  --dark-card: var(--card);
+  --dark-border: var(--border);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
 }
 
 .light {
@@ -61,40 +83,45 @@
   }
 
   body {
-    @apply font-sans antialiased bg-dark-bg text-foreground;
-    color: #ffffff;
+    @apply font-sans antialiased bg-background text-foreground;
   }
-  
-  /* Default heading colors - not !important so they can be overridden */
-  h1, h2, h3, h4, h5, h6 {
-    color: #ffffff;
+
+  /* Default heading colors - theme aware */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-foreground;
   }
-  
+
   /* Allow gradient text to work by not forcing color on spans */
   .bg-clip-text {
     color: transparent !important;
     -webkit-text-fill-color: transparent !important;
   }
-  
-  /* Fix form inputs visibility */
-  input, textarea, select {
-    color: #ffffff;
-    background-color: #1f2937;
+
+  /* Fix form inputs visibility - theme aware */
+  input,
+  textarea,
+  select {
+    @apply bg-input text-foreground border-border;
   }
-  
-  input::placeholder, textarea::placeholder {
-    color: #9ca3af;
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-muted-foreground;
   }
-  
+
   /* Fix label visibility */
   label {
-    color: #d1d5db;
+    @apply text-foreground opacity-80;
   }
-  
+
   /* Fix dropdown and select visibility */
   select option {
-    background-color: #1f2937;
-    color: #ffffff;
+    @apply bg-popover text-popover-foreground;
   }
 }
 
@@ -140,15 +167,19 @@
   0% {
     box-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan), 0 0 15px var(--neon-cyan);
   }
+
   100% {
     box-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan), 0 0 30px var(--neon-cyan);
   }
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -158,6 +189,7 @@
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(-50%);
   }
@@ -194,17 +226,22 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.light .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--dark-card);
+  background: var(--card);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--neon-cyan);
+  background: var(--primary);
   border-radius: 4px;
 }
 
@@ -220,10 +257,14 @@
 }
 
 @keyframes blink {
-  0%, 50% {
+
+  0%,
+  50% {
     opacity: 1;
   }
-  51%, 100% {
+
+  51%,
+  100% {
     opacity: 0;
   }
 }

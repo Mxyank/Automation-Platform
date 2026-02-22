@@ -11,10 +11,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { 
-  GitBranch, 
-  Package, 
-  Database, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  GitBranch,
+  Package,
+  Database,
   Container,
   FileCode,
   Loader2,
@@ -29,6 +31,7 @@ import {
   Zap
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface EnvResult {
   projectName: string;
@@ -46,6 +49,9 @@ interface EnvResult {
 
 export default function EnvReplicator() {
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('env_replicator');
   const [repoUrl, setRepoUrl] = useState("");
   const [branch, setBranch] = useState("main");
   const [includeTests, setIncludeTests] = useState(true);
@@ -65,6 +71,7 @@ export default function EnvReplicator() {
       });
     },
     onError: (error: Error) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Generation Failed",
         description: error.message,
@@ -119,19 +126,21 @@ export default function EnvReplicator() {
     ];
     if (result.migrations) files.push({ content: result.migrations, name: "migrations.sql" });
     if (result.seedData) files.push({ content: result.seedData, name: "seed.sql" });
-    
+
     files.forEach(f => downloadFile(f.content, f.name));
     toast({ title: "Downloaded!", description: "All files have been downloaded." });
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg">
+    <div className="relative min-h-screen bg-dark-bg">
+      {!isFeatureEnabled && <FeatureDisabledOverlay featureName="AI Environment Replicator" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
-      
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <BackButton />
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -182,18 +191,18 @@ export default function EnvReplicator() {
 
                   <div className="flex items-center gap-6">
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="tests" 
-                        checked={includeTests} 
+                      <Checkbox
+                        id="tests"
+                        checked={includeTests}
                         onCheckedChange={(c) => setIncludeTests(c as boolean)}
                         data-testid="checkbox-tests"
                       />
                       <Label htmlFor="tests" className="text-gray-300">Include test setup</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="seed" 
-                        checked={includeSeedData} 
+                      <Checkbox
+                        id="seed"
+                        checked={includeSeedData}
                         onCheckedChange={(c) => setIncludeSeedData(c as boolean)}
                         data-testid="checkbox-seed"
                       />
@@ -272,7 +281,7 @@ export default function EnvReplicator() {
                           Download All
                         </Button>
                       </div>
-                      
+
                       <div className="flex flex-wrap gap-2 mb-4">
                         {result.techStack.map((tech, i) => (
                           <Badge key={i} className="bg-violet-500/20 text-violet-400 border-violet-500/50">
@@ -328,7 +337,7 @@ export default function EnvReplicator() {
                           </pre>
                         </CardContent>
                       </Card>
-                      
+
                       <Card className="bg-dark-card border-gray-800">
                         <CardHeader className="flex flex-row items-center justify-between">
                           <CardTitle className="text-white text-lg">Dockerfile</CardTitle>

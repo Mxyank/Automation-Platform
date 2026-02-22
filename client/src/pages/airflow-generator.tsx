@@ -14,10 +14,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Navigation } from '@/components/navigation';
-import { 
-  Wind, 
-  Download, 
-  Copy, 
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
+import {
+  Wind,
+  Download,
+  Copy,
   Database,
   Clock,
   GitBranch,
@@ -29,6 +31,7 @@ import {
   Trash2,
   ArrowRight
 } from 'lucide-react';
+import { useUpgradeModal, UpgradeModal } from "@/components/upgrade-modal";
 
 interface Task {
   id: string;
@@ -89,7 +92,11 @@ const schedulePresets = [
 export default function AirflowGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { showUpgradeModal, setShowUpgradeModal, checkForUpgrade } = useUpgradeModal();
   const queryClient = useQueryClient();
+  const { isEnabled } = useFeatures();
+  const isAirflowEnabled = isEnabled('airflow_generation');
+
   const [config, setConfig] = useState<AirflowConfig>({
     dagId: '',
     description: '',
@@ -130,6 +137,7 @@ export default function AirflowGenerator() {
       });
     },
     onError: (error: any) => {
+      if (checkForUpgrade(error)) return;
       toast({
         title: "Generation Failed",
         description: error.message || "Failed to generate Airflow DAG",
@@ -196,7 +204,7 @@ export default function AirflowGenerator() {
   const updateTask = (index: number, updates: Partial<Task>) => {
     setConfig(prev => ({
       ...prev,
-      tasks: prev.tasks.map((task, i) => 
+      tasks: prev.tasks.map((task, i) =>
         i === index ? { ...task, ...updates } : task
       )
     }));
@@ -233,7 +241,9 @@ export default function AirflowGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="relative min-h-screen bg-dark-bg text-white">
+      {!isAirflowEnabled && <FeatureDisabledOverlay featureName="Airflow Generator" />}
+      <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
       <Navigation />
       <div className="pt-16 p-6">
         <div className="max-w-7xl mx-auto">
@@ -409,8 +419,8 @@ export default function AirflowGenerator() {
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="schedule">Schedule Interval</Label>
-                      <Select 
-                        value={config.schedule} 
+                      <Select
+                        value={config.schedule}
                         onValueChange={(value) => setConfig(prev => ({ ...prev, schedule: value }))}
                       >
                         <SelectTrigger className="bg-dark-input border-dark-border text-white" data-testid="select-schedule">
@@ -556,8 +566,8 @@ export default function AirflowGenerator() {
                       <Checkbox
                         id="dependsOnPast"
                         checked={config.defaultArgs.depends_on_past}
-                        onCheckedChange={(checked) => setConfig(prev => ({ 
-                          ...prev, 
+                        onCheckedChange={(checked) => setConfig(prev => ({
+                          ...prev,
                           defaultArgs: { ...prev.defaultArgs, depends_on_past: !!checked }
                         }))}
                         data-testid="checkbox-depends-on-past"
@@ -569,8 +579,8 @@ export default function AirflowGenerator() {
                       <Checkbox
                         id="waitForDownstream"
                         checked={config.defaultArgs.wait_for_downstream}
-                        onCheckedChange={(checked) => setConfig(prev => ({ 
-                          ...prev, 
+                        onCheckedChange={(checked) => setConfig(prev => ({
+                          ...prev,
                           defaultArgs: { ...prev.defaultArgs, wait_for_downstream: !!checked }
                         }))}
                         data-testid="checkbox-wait-downstream"
@@ -619,9 +629,9 @@ export default function AirflowGenerator() {
                               <Badge variant="outline" className="text-teal-400 border-teal-400">
                                 Task {index + 1}
                               </Badge>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => removeTask(index)}
                                 className="text-red-400 hover:text-red-300"
                                 data-testid={`button-remove-task-${index}`}
@@ -644,8 +654,8 @@ export default function AirflowGenerator() {
 
                               <div className="space-y-2">
                                 <Label>Operator</Label>
-                                <Select 
-                                  value={task.operator} 
+                                <Select
+                                  value={task.operator}
                                   onValueChange={(value) => updateTask(index, { operator: value })}
                                 >
                                   <SelectTrigger className="bg-dark-input border-dark-border text-white" data-testid={`select-operator-${index}`}>
@@ -742,7 +752,7 @@ export default function AirflowGenerator() {
 
               {config.tasks.length > 0 && (
                 <div className="mt-6 flex justify-center">
-                  <Button 
+                  <Button
                     onClick={handleGenerate}
                     disabled={generateMutation.isPending}
                     className="bg-gradient-to-r from-teal-500 to-green-500 text-white px-8 py-6 text-lg"
@@ -818,8 +828,8 @@ export default function AirflowGenerator() {
                       <Badge variant="secondary">3 tasks</Badge>
                       <Badge variant="secondary">PostgreSQL</Badge>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full mt-4"
                       onClick={() => {
                         setConfig(prev => ({
@@ -851,8 +861,8 @@ export default function AirflowGenerator() {
                       <Badge variant="secondary">4 tasks</Badge>
                       <Badge variant="secondary">Snowflake</Badge>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full mt-4"
                       onClick={() => {
                         setConfig(prev => ({
@@ -885,8 +895,8 @@ export default function AirflowGenerator() {
                       <Badge variant="secondary">5 tasks</Badge>
                       <Badge variant="secondary">Spark</Badge>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full mt-4"
                       onClick={() => {
                         setConfig(prev => ({
@@ -920,8 +930,8 @@ export default function AirflowGenerator() {
                       <Badge variant="secondary">3 tasks</Badge>
                       <Badge variant="secondary">BigQuery</Badge>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full mt-4"
                       onClick={() => {
                         setConfig(prev => ({
@@ -954,8 +964,8 @@ export default function AirflowGenerator() {
                       <Badge variant="secondary">4 tasks</Badge>
                       <Badge variant="secondary">Python</Badge>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full mt-4"
                       onClick={() => {
                         setConfig(prev => ({
@@ -988,8 +998,8 @@ export default function AirflowGenerator() {
                       <Badge variant="secondary">3 tasks</Badge>
                       <Badge variant="secondary">REST API</Badge>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full mt-4"
                       onClick={() => {
                         setConfig(prev => ({

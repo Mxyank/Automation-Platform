@@ -7,13 +7,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 import { AdminGuard } from '@/lib/admin-guard';
-import { 
-  Activity, 
-  AlertTriangle, 
-  Database, 
-  Server, 
-  Users, 
+import {
+  Activity,
+  AlertTriangle,
+  Database,
+  Server,
+  Users,
   Zap,
   RefreshCw,
   Download,
@@ -52,9 +54,15 @@ interface SystemHealth {
 }
 
 export default function LogsDashboard() {
+  const { isEnabled } = useFeatures();
+  const isFeatureEnabled = isEnabled('logs_dashboard');
+
   return (
     <AdminGuard>
-      <LogsDashboardContent />
+      <div className="relative">
+        {!isFeatureEnabled && <FeatureDisabledOverlay featureName="Logs Dashboard" />}
+        <LogsDashboardContent />
+      </div>
     </AdminGuard>
   );
 }
@@ -215,10 +223,9 @@ function LogsDashboardContent() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${
-                    systemHealth.status === 'healthy' ? 'bg-green-500' :
-                    systemHealth.status === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
-                  }`} />
+                  <div className={`w-3 h-3 rounded-full ${systemHealth.status === 'healthy' ? 'bg-green-500' :
+                      systemHealth.status === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
+                    }`} />
                   <span className={`capitalize font-medium ${getStatusColor(systemHealth.status)}`}>
                     {systemHealth.status}
                   </span>

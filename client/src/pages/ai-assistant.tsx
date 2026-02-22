@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useFeatures } from "@/hooks/use-features";
+import { FeatureDisabledOverlay } from "@/components/feature-disabled-overlay";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,13 +17,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { 
-  ArrowLeft, 
-  Send, 
-  Sparkles, 
-  Bot, 
-  User, 
-  Copy, 
+import {
+  ArrowLeft,
+  Send,
+  Sparkles,
+  Bot,
+  User,
+  Copy,
   Check,
   Loader2,
   Cloud,
@@ -39,8 +41,19 @@ import {
   Star,
   CreditCard,
   Rocket,
-  X
+  X,
+  ExternalLink,
+  Globe,
+  Search
 } from "lucide-react";
+
+interface WebSource {
+  title: string;
+  url: string;
+  description: string;
+  source: string;
+  favicon?: string;
+}
 
 interface Message {
   id: string;
@@ -48,6 +61,7 @@ interface Message {
   content: string;
   timestamp: Date;
   isTyping?: boolean;
+  webSources?: WebSource[];
 }
 
 const suggestedQuestions = [
@@ -106,6 +120,11 @@ export default function AIAssistant() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { isEnabled } = useFeatures();
+
+  if (!isEnabled("ai_assistance")) {
+    return <FeatureDisabledOverlay featureName="AI DevOps Assistant" />;
+  }
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -139,8 +158,8 @@ export default function AIAssistant() {
       return response.json();
     },
     onSuccess: (data) => {
-      setMessages(prev => prev.map(msg => 
-        msg.isTyping ? { ...msg, content: data.answer, isTyping: false } : msg
+      setMessages(prev => prev.map(msg =>
+        msg.isTyping ? { ...msg, content: data.answer, isTyping: false, webSources: data.webSources || [] } : msg
       ));
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/usage"] });
@@ -150,11 +169,40 @@ export default function AIAssistant() {
         setShowUpgradeModal(true);
         setMessages(prev => prev.filter(msg => !msg.isTyping));
       } else {
-        setMessages(prev => prev.map(msg => 
-          msg.isTyping ? { 
-            ...msg, 
-            content: "I apologize, but I'm experiencing technical difficulties. Please try again later.", 
-            isTyping: false 
+        // Build a specific, actionable error message based on the error type
+        let errorContent = '';
+        const errorType = error.errorType || '';
+        const errorMsg = error.message || '';
+
+        switch (errorType) {
+          case 'AI_NOT_CONFIGURED':
+            errorContent = `⚠️ **AI Service Not Configured**\n\nThe AI service is not set up yet. The administrator needs to configure the Gemini API key.\n\n**What you can do:**\n- Contact the administrator to set up the \`GOOGLE_API_KEY\` environment variable\n- Check the deployment documentation for setup instructions`;
+            break;
+          case 'QUOTA_EXCEEDED':
+            errorContent = `⏳ **API Quota Exceeded**\n\n${errorMsg}\n\n**What you can do:**\n- Wait a few minutes and try again\n- Contact the administrator to upgrade the API plan`;
+            break;
+          case 'INVALID_API_KEY':
+            errorContent = `🔑 **API Key Issue**\n\n${errorMsg}\n\n**What you can do:**\n- Contact the administrator to verify the API key configuration`;
+            break;
+          case 'MODEL_NOT_FOUND':
+            errorContent = `🔄 **Temporary Issue**\n\n${errorMsg}\n\n**What you can do:**\n- Try again in a moment — this is usually a temporary issue`;
+            break;
+          case 'PERMISSION_DENIED':
+            errorContent = `🚫 **Permission Denied**\n\n${errorMsg}\n\n**What you can do:**\n- Contact the administrator to enable the Generative Language API`;
+            break;
+          case 'EMPTY_RESPONSE':
+            errorContent = `💬 **Empty Response**\n\nThe AI couldn't generate a response for your query. Please try:\n- Rephrasing your question with more detail\n- Being more specific about what you need help with`;
+            break;
+          default:
+            errorContent = `❌ **Error**\n\n${errorMsg || 'An unexpected error occurred.'}\n\nPlease try again or rephrase your question.`;
+            break;
+        }
+
+        setMessages(prev => prev.map(msg =>
+          msg.isTyping ? {
+            ...msg,
+            content: errorContent,
+            isTyping: false
           } : msg
         ));
       }
@@ -196,8 +244,8 @@ export default function AIAssistant() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const filteredSuggestions = selectedCategory === "All" 
-    ? suggestedQuestions 
+  const filteredSuggestions = selectedCategory === "All"
+    ? suggestedQuestions
     : suggestedQuestions.filter(q => q.category === selectedCategory);
 
   if (!user) {
@@ -231,7 +279,7 @@ export default function AIAssistant() {
               You've used all your free credits! Upgrade to AI Pro for unlimited AI-powered DevOps assistance.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 mt-4">
             <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-lg p-4 border border-purple-500/30">
               <h4 className="font-semibold text-white flex items-center gap-2 mb-3">
@@ -259,7 +307,7 @@ export default function AIAssistant() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <Button 
+              <Button
                 onClick={() => {
                   setShowUpgradeModal(false);
                   setLocation("/pricing");
@@ -270,7 +318,7 @@ export default function AIAssistant() {
                 <Crown className="w-4 h-4 mr-2" />
                 View Pricing Plans
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => setShowUpgradeModal(false)}
                 className="w-full border-gray-600 text-gray-400 hover:text-white hover:border-gray-500"
@@ -315,9 +363,9 @@ export default function AIAssistant() {
                 </Badge>
               ) : (
                 <Link href="/pricing">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10 hover:text-yellow-400"
                     data-testid="button-upgrade-pro"
                   >
@@ -359,11 +407,10 @@ export default function AIAssistant() {
                   <button
                     key={category.name}
                     onClick={() => setSelectedCategory(category.name)}
-                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all ${
-                      selectedCategory === category.name
-                        ? 'bg-gradient-to-r ' + category.color + ' text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all ${selectedCategory === category.name
+                      ? 'bg-gradient-to-r ' + category.color + ' text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      }`}
                   >
                     <category.icon className="w-4 h-4" />
                     <span className="text-sm">{category.name}</span>
@@ -414,7 +461,7 @@ export default function AIAssistant() {
                     </div>
                     <h2 className="text-2xl font-bold mb-2">Welcome to AI for Cloud</h2>
                     <p className="text-gray-400 mb-6 max-w-md">
-                      Ask me anything about DevOps, cloud infrastructure, containerization, CI/CD, and more. 
+                      Ask me anything about DevOps, cloud infrastructure, containerization, CI/CD, and more.
                       I'm here to help you optimize your development workflow.
                     </p>
                     <div className="flex flex-wrap gap-2 justify-center">
@@ -445,13 +492,12 @@ export default function AIAssistant() {
                             <Bot className="w-4 h-4 text-white" />
                           </div>
                         )}
-                        
+
                         <div className={`max-w-3xl ${message.type === 'user' ? 'ml-12' : 'mr-12'}`}>
-                          <div className={`p-4 rounded-2xl ${
-                            message.type === 'user' 
-                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white ml-auto' 
-                              : 'bg-gray-800/50 text-gray-100'
-                          }`}>
+                          <div className={`p-4 rounded-2xl ${message.type === 'user'
+                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white ml-auto'
+                            : 'bg-gray-800/50 text-gray-100'
+                            }`}>
                             {message.isTyping ? (
                               <div className="flex items-center gap-2">
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -463,20 +509,55 @@ export default function AIAssistant() {
                                   <p className="whitespace-pre-wrap">{message.content}</p>
                                 </div>
                                 {message.type === 'assistant' && (
-                                  <div className="flex items-center gap-2 pt-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleCopy(message.content, message.id)}
-                                      className="h-6 px-2 text-xs text-gray-400 hover:text-white"
-                                    >
-                                      {copiedId === message.id ? (
-                                        <Check className="w-3 h-3" />
-                                      ) : (
-                                        <Copy className="w-3 h-3" />
-                                      )}
-                                    </Button>
-                                  </div>
+                                  <>
+                                    <div className="flex items-center gap-2 pt-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleCopy(message.content, message.id)}
+                                        className="h-6 px-2 text-xs text-gray-400 hover:text-white"
+                                      >
+                                        {copiedId === message.id ? (
+                                          <Check className="w-3 h-3" />
+                                        ) : (
+                                          <Copy className="w-3 h-3" />
+                                        )}
+                                      </Button>
+                                    </div>
+
+                                    {/* Web Sources */}
+                                    {message.webSources && message.webSources.length > 0 && (
+                                      <div className="mt-3 pt-3 border-t border-gray-700/50">
+                                        <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                          <Search className="w-3 h-3" />
+                                          Web Sources
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                          {message.webSources.map((src, idx) => (
+                                            <a
+                                              key={idx}
+                                              href={src.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-700/50 hover:bg-gray-600/50 rounded-lg text-xs text-gray-300 hover:text-white transition-colors group max-w-[200px]"
+                                              title={src.title}
+                                            >
+                                              {src.favicon && (
+                                                <img
+                                                  src={src.favicon}
+                                                  alt=""
+                                                  className="w-3.5 h-3.5 rounded-sm flex-shrink-0"
+                                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                />
+                                              )}
+                                              <span className="truncate">{src.source}</span>
+                                              <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             )}
