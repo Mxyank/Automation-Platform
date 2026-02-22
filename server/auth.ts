@@ -31,6 +31,8 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  const isProduction = process.env.NODE_ENV === "production";
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "development-secret-key-12345",
     resave: false,
@@ -41,15 +43,14 @@ export function setupAuth(app: Express) {
     }),
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      secure: app.get("env") === "production",
+      secure: isProduction,
       httpOnly: true,
       sameSite: "lax",
     },
   };
 
-  if (app.get("env") === "production") {
-    app.set("trust proxy", 1);
-  }
+  // Always trust proxy – Vercel/Railway/Render are always behind a reverse proxy
+  app.set("trust proxy", 1);
 
   app.use(session(sessionSettings));
   app.use(passport.initialize());
@@ -252,8 +253,9 @@ export function setupAuth(app: Express) {
     if (!googleClientId || !googleClientSecret) {
       return res.redirect("/auth?error=google_not_configured");
     }
-    passport.authenticate("google", { failureRedirect: "/auth?error=oauth_failed" })(req, res, next);
-  }, (req, res) => {
-    res.redirect("/dashboard");
+    passport.authenticate("google", {
+      failureRedirect: "/auth?error=oauth_failed",
+      successRedirect: "/dashboard",
+    })(req, res, next);
   });
 }
