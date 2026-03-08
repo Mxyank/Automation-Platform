@@ -391,3 +391,85 @@ Provide a helpful, practical response:`;
 
   return await generateAIContent(prompt);
 }
+
+/**
+ * Analyze an array of source files for security vulnerabilities.
+ * Returns a structured JSON report with findings, score, and summary.
+ */
+export async function analyzeCodeSecurity(
+  files: { path: string; content: string }[],
+  repoName: string
+): Promise<{
+  score: number;
+  summary: string;
+  findings: {
+    severity: "critical" | "high" | "medium" | "low";
+    category: string;
+    file: string;
+    line?: number;
+    title: string;
+    description: string;
+    remediation: string;
+    codeSnippet?: string;
+  }[];
+}> {
+  if (!isAIConfigured()) {
+    throw new Error("AI_NOT_CONFIGURED");
+  }
+
+  const fileList = files
+    .map(f => `--- FILE: ${f.path} ---\n${f.content}\n--- END FILE ---`)
+    .join("\n\n");
+
+  const prompt = `You are an expert application security analyst. Analyze the following source code files from the GitHub repository "${repoName}" for security vulnerabilities, misconfigurations, and best practice violations.
+
+Focus on:
+1. **Hardcoded secrets** (API keys, passwords, tokens in code)
+2. **SQL injection / NoSQL injection** risks
+3. **XSS / CSRF** vulnerabilities
+4. **Insecure dependencies** or outdated packages
+5. **Docker / container** misconfigurations (running as root, exposed ports)
+6. **CI/CD pipeline** security (secret leaks in logs, unsafe commands)
+7. **Authentication / Authorization** weaknesses
+8. **Infrastructure-as-Code** issues (open security groups, unencrypted storage)
+9. **Sensitive data exposure** (logs, error messages, API responses)
+10. **Missing security headers** or CORS misconfigurations
+
+SOURCE FILES:
+${fileList}
+
+Respond ONLY with valid JSON in this exact format (no markdown, no code fences):
+{
+  "score": <number 0-100 where 100 is perfectly secure>,
+  "summary": "<2-3 sentence summary of the overall security posture>",
+  "findings": [
+    {
+      "severity": "critical|high|medium|low",
+      "category": "<e.g. Hardcoded Secrets, SQL Injection, Docker Security>",
+      "file": "<file path>",
+      "line": <optional line number>,
+      "title": "<short title>",
+      "description": "<what the issue is>",
+      "remediation": "<how to fix it>",
+      "codeSnippet": "<optional relevant code snippet>"
+    }
+  ]
+}
+
+If the code is clean, return a high score with an empty findings array.`;
+
+  const raw = await generateAIContent(prompt, true);
+
+  try {
+    // Try to parse JSON, stripping any markdown fences
+    const cleaned = raw.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch {
+    // Fallback if AI returned non-JSON
+    return {
+      score: 50,
+      summary: "Analysis completed but results could not be fully parsed. Please review manually.",
+      findings: [],
+    };
+  }
+}

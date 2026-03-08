@@ -48,6 +48,7 @@ import helmet from "helmet";
 import { body, validationResult } from "express-validator";
 import os from 'os';
 import { performance } from 'perf_hooks';
+import { setupSocket } from "./socket";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Security middleware (order matters!)
@@ -85,6 +86,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin routes
   storage.seedFeatureSettings().catch(err => logger.error("Failed to seed feature settings", err));
   app.use("/api/admin", adminRoutes);
+
+  // GitHub Scanner routes
+  const { registerGitHubRoutes } = await import("./routes/github");
+  registerGitHubRoutes(app);
+
+  // Social and notification routes
+  const { default: profileRoutes } = await import("./routes/profile");
+  const { default: chatRoutes } = await import("./routes/chat");
+  const { default: notificationRoutes } = await import("./routes/notifications");
+  const { default: socialRoutes } = await import("./routes/social");
+
+  app.use("/api/profile", profileRoutes);
+  app.use("/api/chat", chatRoutes);
+  app.use("/api/social/notifications", notificationRoutes);
+  app.use("/api/social/flow", socialRoutes);
 
   // Push notification routes
   app.get("/api/push/vapid-key", (req, res) => {
@@ -2725,5 +2741,9 @@ Be concise, practical, and provide code examples when helpful. Focus on producti
   });
 
   const httpServer = createServer(app);
+
+  // Initialize Socket.IO
+  setupSocket(httpServer);
+
   return httpServer;
 }

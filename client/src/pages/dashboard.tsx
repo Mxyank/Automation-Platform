@@ -50,7 +50,8 @@ import {
   Search,
   Network,
   Fingerprint,
-  Eye
+  Eye,
+  Github
 } from "lucide-react";
 import type { Project } from "@shared/schema";
 import { motion } from "framer-motion";
@@ -457,6 +458,30 @@ export default function Dashboard() {
                     })}
                   </div>
                 </CardContent>
+              </Card>
+
+              {/* GitHub Security Scanner */}
+              <Card className="bg-dark-card border-gray-800 overflow-hidden">
+                <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+                        <Github className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-bold text-lg">GitHub Security Scanner</h3>
+                        <p className="text-gray-400 text-sm">Connect your GitHub and scan repos for vulnerabilities</p>
+                      </div>
+                    </div>
+                    <Link href="/github-scanner">
+                      <Button className="bg-white text-black hover:bg-gray-100 font-medium gap-2">
+                        <Shield className="w-4 h-4" />
+                        Connect & Scan
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </Card>
             </div>
 

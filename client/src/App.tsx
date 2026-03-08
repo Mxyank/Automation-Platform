@@ -49,7 +49,12 @@ import SnowflakeSetup from "@/pages/snowflake-setup";
 import AirflowGenerator from "@/pages/airflow-generator";
 import Helpdesk from "@/pages/helpdesk";
 import CloudSearch from "@/pages/cloud-search";
+import GitHubScanner from "@/pages/github-scanner";
 import ProjectDetail from "@/pages/project-detail";
+import ProfileSetup from "@/pages/profile-setup";
+import ProfilePage from "@/pages/profile-page";
+import NetworkPage from "@/pages/network-page";
+import ChatPage from "@/pages/chat-page";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -95,7 +100,13 @@ function Router() {
       <ProtectedRoute path="/airflow-generator" component={AirflowGenerator} />
       <ProtectedRoute path="/helpdesk" component={Helpdesk} />
       <ProtectedRoute path="/cloud-search" component={CloudSearch} />
+      <ProtectedRoute path="/github-scanner" component={GitHubScanner} />
       <ProtectedRoute path="/projects/:id" component={ProjectDetail} />
+      <ProtectedRoute path="/profile/setup" component={ProfileSetup} />
+      <ProtectedRoute path="/profile" component={ProfilePage} />
+      <ProtectedRoute path="/users/:id" component={ProfilePage} />
+      <ProtectedRoute path="/network" component={NetworkPage} />
+      <ProtectedRoute path="/chat" component={ChatPage} />
       <Route component={NotFound} />
     </Switch>
   );

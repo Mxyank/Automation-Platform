@@ -4,6 +4,7 @@ import { redis } from "./redis";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as GitHubStrategy } from "passport-github2";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import type { Express } from "express";
@@ -31,8 +32,6 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const isProduction = process.env.NODE_ENV === "production";
-
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "development-secret-key-12345",
     resave: false,
@@ -43,14 +42,15 @@ export function setupAuth(app: Express) {
     }),
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      secure: isProduction,
+      secure: app.get("env") === "production",
       httpOnly: true,
       sameSite: "lax",
     },
   };
 
-  // Always trust proxy – Vercel/Railway/Render are always behind a reverse proxy
-  app.set("trust proxy", 1);
+  if (app.get("env") === "production") {
+    app.set("trust proxy", 1);
+  }
 
   app.use(session(sessionSettings));
   app.use(passport.initialize());
@@ -111,6 +111,52 @@ export function setupAuth(app: Express) {
     dummyStrategy.name = 'google';
     passport.use('google', dummyStrategy);
     logger.warn("Google OAuth credentials missing - Google login will be disabled");
+  }
+
+  // GitHub OAuth Strategy
+  const githubClientId = process.env.GITHUB_CLIENT_ID?.trim();
+  const githubClientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
+
+  if (githubClientId && githubClientSecret) {
+    passport.use(
+      new GitHubStrategy(
+        {
+          clientID: githubClientId,
+          clientSecret: githubClientSecret,
+          callbackURL: `${process.env.APP_URL || 'http://localhost:5002'}/api/github/callback`,
+          scope: ["user:email"],
+        },
+        async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+          try {
+            const email = profile.emails?.[0]?.value;
+
+            // Look up by email first
+            if (email) {
+              const existingUser = await storage.getUserByEmail(email);
+              if (existingUser) {
+                // Save GitHub username but NOT the token (login token has user:email scope only,
+                // the scanner needs repo scope — so scanner will ask to authorize separately)
+                const { db } = await import("./db");
+                const { users } = await import("@shared/schema");
+                const { eq } = await import("drizzle-orm");
+                await db.update(users).set({
+                  githubUsername: profile.username,
+                }).where(eq(users.id, existingUser.id));
+                return done(null, existingUser);
+              }
+            }
+
+            // Create new user — don't store token either (scanner will request separately)
+            const user = await storage.createGitHubUser(profile);
+            return done(null, user);
+          } catch (error) {
+            return done(error as Error, false);
+          }
+        }
+      )
+    );
+  } else {
+    logger.warn("GitHub OAuth credentials missing - GitHub login will be disabled");
   }
 
   passport.serializeUser((user, done) => done(null, (user as User).id));
@@ -257,5 +303,15 @@ export function setupAuth(app: Express) {
       failureRedirect: "/auth?error=oauth_failed",
       successRedirect: "/dashboard",
     })(req, res, next);
+  });
+
+  // GitHub OAuth routes
+  app.get("/api/auth/github", (req, res, next) => {
+    if (!githubClientId || !githubClientSecret) {
+      return res.status(400).json({ message: "GitHub OAuth is not configured." });
+    }
+    // Set session flag so the shared callback knows this is a login flow
+    (req.session as any).githubFlow = "login";
+    passport.authenticate("github", { scope: ["user:email"] })(req, res, next);
   });
 }

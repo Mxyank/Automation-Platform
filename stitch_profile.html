@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9f506",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#23220f",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-slate-900 dark:text-slate-100">
+<div class="size-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-900">polymer</span>
+</div>
+<h2 class="text-lg font-bold leading-tight tracking-tight">NexusFlow</h2>
+</div>
+<label class="flex flex-col min-w-40 h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-xl h-full">
+<div class="text-slate-500 flex border-none bg-slate-100 dark:bg-slate-800 items-center justify-center pl-4 rounded-l-xl border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-slate-900 dark:text-slate-100 focus:outline-0 focus:ring-0 border-none bg-slate-100 dark:bg-slate-800 focus:border-none h-full placeholder:text-slate-500 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal" placeholder="Search insights..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-4 items-center">
+<button class="flex cursor-pointer items-center justify-center rounded-full h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex cursor-pointer items-center justify-center rounded-full h-10 w-10 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-700 bg-cover bg-center border border-slate-200 dark:border-slate-800" data-alt="User profile circular headshot photo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCeKvHkA9IBj8N151xS2uyUPK4lYGDf9F4FOxDjliF5zSr8XB4Klt7LDU7Hagi4LhbELY36lc8dclGmId-I4ZE3eFaTe4mFxngtfG-_42RvVFsIkD8497BlJGLLmOUJSURJddkCM2DVERFfyTRHmaa0_F-Qy1JRXaB0OugGeTFlItOLFKPrc3i_s5RQtRQ5yYI7tzUxV-KS-l58Go-4jdQNV59DNWPE45jo8SlS-Brv-6J2-XkgKWAEBHIsFrtmfl6btnwIsUIOL50");'></div>
+</div>
+</header>
+<main class="flex flex-1 justify-center py-8">
+<div class="layout-content-container flex max-w-[1200px] flex-1 gap-8 px-6">
+<aside class="flex flex-col w-64 gap-6 shrink-0">
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-slate-100 text-xl font-bold">Alex Rivers</h1>
+<p class="text-slate-500 text-sm">@arivers_design</p>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-slate-900" href="#">
+<span class="material-symbols-outlined fill-1">grid_view</span>
+<p class="text-sm font-semibold">Overview</p>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-sm font-medium">Settings</p>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined">history</span>
+<p class="text-sm font-medium">Activity</p>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined">shield</span>
+<p class="text-sm font-medium">Security</p>
+</a>
+</nav>
+<div class="mt-auto p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Storage Usage</p>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[65%]"></div>
+</div>
+<p class="text-xs mt-2 text-slate-500">12.4 GB of 20 GB used</p>
+</div>
+</aside>
+<div class="flex flex-1 flex-col gap-8">
+<section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="h-32 bg-gradient-to-r from-primary/40 to-primary/10"></div>
+<div class="px-8 pb-8 flex flex-col items-start relative">
+<div class="size-32 rounded-full border-4 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 -mt-16 bg-cover bg-center shadow-lg" data-alt="Large detailed profile picture of Alex Rivers" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBEKGocXNIR-AL_XB_HuA4RrzH83mZHla4-YAfWBKCTPX4wOjm3ZH4rHSMpsaG2y1X7Tsle5LKpl2swPXg93JbFGZBFyDExuDc4V6ba3E6NvWjP82LUK9Gf7jJcGovZCX9xgUYncV6Vh7fMky2Vmqmg9DN8NqfUsZjz9UqqrsJkE0BZ2FrOwIc00QaC47G-O5avvybzVqTakxaf6mYHXsxpCBrg17XO6Mo1zuE1WK_wSTE347TIHQI5XWoUC2dM_6tY2w63zHvs_Nk");'></div>
+<div class="mt-4 flex w-full justify-between items-end">
+<div>
+<h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100">Alex Rivers</h2>
+<p class="text-slate-500 mt-1 max-w-xl">Product Designer &amp; Tech Enthusiast. I build clean interfaces for complex problems. Currently exploring the intersection of AI and human-centric design.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center justify-center px-6 h-11 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-900 dark:text-slate-100 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                            Message
+                                        </button>
+<button class="flex items-center justify-center px-6 h-11 bg-primary rounded-full text-slate-900 font-bold hover:brightness-95 transition-all">
+                                            Edit Profile
+                                        </button>
+</div>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-4 flex flex-col gap-6">
+<section class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+<h3 class="text-lg font-bold mb-4">About</h3>
+<div class="space-y-4">
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined text-sm">location_on</span>
+<span class="text-sm">San Francisco, CA</span>
+</div>
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+<span class="text-sm">Joined March 2022</span>
+</div>
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined text-sm">link</span>
+<a class="text-sm text-blue-600 dark:text-blue-400 hover:underline" href="#">arivers.design</a>
+</div>
+<div class="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+<span class="material-symbols-outlined text-sm">mail</span>
+<span class="text-sm">alex@nexusflow.io</span>
+</div>
+</div>
+<div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+<h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Skills</h4>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium">UI/UX</span>
+<span class="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium">React</span>
+<span class="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium">Tailwind</span>
+<span class="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium">Figma</span>
+</div>
+</div>
+</section>
+<section class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+<h3 class="text-lg font-bold mb-4">Connections</h3>
+<div class="flex -space-x-3 overflow-hidden">
+<div class="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-slate-900 bg-slate-300 bg-cover" data-alt="User connection avatar 1" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDwTQOrnYzLNLucpohkBIYip93ig-STMJb7PY4_ju1LZINMMAb-FuXP8wdJIUrkOoXbOs3PD5ytQKzSRsaUJItl2PIw3E9FzPr155scqeaO3DO3s8Pr9IeRY0ZVIKVbyMMMkt-9OuJjJ4lmWbH-J7GC812CQng8q9ifASOmFyo2u-LCVbUgwSHgziOkRRWOwxmVUmyT182LUQC9nwbwkZnv7p2Hw49OUP_MrckBxBKsCVEp-VFDNWCZqi4-c9xOMXLyZr6VbospN6U");'></div>
+<div class="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-slate-900 bg-slate-300 bg-cover" data-alt="User connection avatar 2" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBURqBwfYCoYlh7I_BVwdaIoyCKxl7vBdUaeO4CfXcwt_scWNmz__IXFEXlS0NZc1WFjkNf41LataHqXTMrY2cxn2qO7qWQhsW-FZSEz-vD_TxgX80UtnbX3fgMKd9eveXlOgAXPamoQ0Jwpw8RZ9NxRJyk8etFRa1hfW8mItMRM01RGnKb_qVld3oeyUvSr7zdyVwN8ezJAhY0XokL3-dYQGeyJBuVyG6CpV-mjpeWCoQ36-ghQgL4aB6-uYKJJFGsg8QLY-bfnzk");'></div>
+<div class="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-slate-900 bg-slate-300 bg-cover" data-alt="User connection avatar 3" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDoUAQFfN96ztrH6obzMnu_1wS4WX1lepLTwcvQa28Qry_mzmSN_kFHpqvgROiGmILvOEOSk7Knd3Jx24vf8GdGQ4Xrr5aWbTuHkeLX3CzXDTG2HXLXkBZK02fmelUX5UIHNdI6I0O4U4XUSll_rQFTY4v1vy4mlwKwQZQYTIQyAP4z0zfaUXdl2BONLEM5GExcy3WAcorgbulTCt8CrqXyl3uNF1PDkdV08k57YJ7bQH4eebDw8b34kYqb50hRnPuEl7bet0xDhAI");'></div>
+<div class="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-slate-900 bg-slate-300 bg-cover" data-alt="User connection avatar 4" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDHl_hF5ICd6wy6r1VaM5pUtgUyOKCu_RFcqIhVgL-KedO3nc1zz2OlwkzfWE_QLsqedxcMiygHn6n6YsSU75CIMG9RqBdOLsc_Gd41GNLkTxUhsmFhiKWkVQ54mfMZoWTbHMgr1ER4Q3FALl9g-j6CEP9M3gRteU8D1y9OguGNGd0W1UGGTpzwCADopl_amqRmooTxjNSYiNZtitK5fea2QFpAWHeLsJxk4tOghOaNEOoGEVVLhq-kGKLDFyM0nKuCyJZbUY0wDk8");'></div>
+<div class="flex h-10 w-10 items-center justify-center rounded-full ring-2 ring-white dark:ring-slate-900 bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-500">
+                                            +42
+                                        </div>
+</div>
+<button class="w-full mt-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">View all network</button>
+</section>
+</div>
+<div class="col-span-8 flex flex-col gap-6">
+<div class="flex border-b border-slate-200 dark:border-slate-800 px-2 gap-8">
+<a class="flex flex-col items-center justify-center border-b-2 border-primary text-slate-900 dark:text-slate-100 pb-3" href="#">
+<p class="text-sm font-bold tracking-tight">Recent Activity</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 pb-3 hover:text-slate-900 dark:hover:text-slate-100" href="#">
+<p class="text-sm font-bold tracking-tight">Posts</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 pb-3 hover:text-slate-900 dark:hover:text-slate-100" href="#">
+<p class="text-sm font-bold tracking-tight">Media</p>
+</a>
+</div>
+<div class="flex flex-col gap-4">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex gap-4 items-start">
+<div class="size-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-slate-900">edit_note</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-bold text-slate-900 dark:text-slate-100">Published a new article</h4>
+<span class="text-xs text-slate-400">2h ago</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm">"The Future of AI-Driven Workflows in Design Systems" is now live on the Engineering blog.</p>
+<div class="mt-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg flex items-center gap-4 border border-slate-100 dark:border-slate-700">
+<div class="size-16 bg-slate-200 rounded shrink-0 bg-cover" data-alt="Article thumbnail showing abstract digital art" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBY73w3uYMPygP3z9alKkFW8vTukz8RNMeAV8Zim_lkQlf9XiEKGdnsEThjz-7IkU0VmAzmauoIX5P_-i7vmm16H9GzZyMzj6qERp2Yr0QNJdWYu9l0zd03Xrc1Go_U32TaUOVC8TIhy61CGkD9zk8LThHnsntS_6-iFZ0ZcdJwrKANQIH3AWR28cmAfipPn23vMI_wZy-cDdYOYglOpI9B0LXtKYa3f966Ebcm782rdNruZYKXf4T_QGfkwYLLEC0wmACoh3htdu4");'></div>
+<div>
+<p class="font-semibold text-sm">The Future of AI-Driven Workflows</p>
+<p class="text-xs text-slate-500 mt-1 line-clamp-1">Exploring how LLMs are changing the way we think about design components...</p>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex gap-4 items-start">
+<div class="size-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-slate-900">star</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-bold text-slate-900 dark:text-slate-100">Bookmarked a repository</h4>
+<span class="text-xs text-slate-400">5h ago</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm">Saved <span class="text-slate-900 dark:text-slate-100 font-medium">shadcn/ui</span> to "Frontend Resources".</p>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex gap-4 items-start">
+<div class="size-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-slate-900">chat_bubble</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-bold text-slate-900 dark:text-slate-100">Commented on a project</h4>
+<span class="text-xs text-slate-400">1d ago</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm">"Great use of color theory on the dashboard landing page. The accessibility scores look solid!"</p>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 flex gap-4 items-start">
+<div class="size-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-slate-900">person_add</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<h4 class="font-bold text-slate-900 dark:text-slate-100">Accepted a connection request</h4>
+<span class="text-xs text-slate-400">2d ago</span>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm">You are now connected with Sarah Jenkins.</p>
+</div>
+</div>
+<button class="w-full py-4 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+                                        Load more activity
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+```</body></html>

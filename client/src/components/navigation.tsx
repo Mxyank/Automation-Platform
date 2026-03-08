@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "@/components/search-bar";
 import { SwitchUserModal } from "@/components/switch-user-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Rocket, Menu, X, ChevronDown, Briefcase, UserCog, Github } from "lucide-react";
+import { Rocket, Menu, X, ChevronDown, Briefcase, UserCog, Github, User, Users, MessageSquare, Globe } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,12 @@ export function Navigation() {
     user.email === PRIMARY_ADMIN_EMAIL ||
     (user as any).canImpersonate
   );
+
+  const { data: counts } = useQuery<{ unreadMessages: number, pendingConnections: number, total: number }>({
+    queryKey: ["/api/social/counts"],
+    enabled: !!user,
+    refetchInterval: 30000, // Refresh every 30s
+  });
 
   const handleAuthAction = () => {
     if (user) {
@@ -113,22 +120,6 @@ export function Navigation() {
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <>
-                <div className="bg-card border border-border rounded-lg px-3 py-1.5 flex items-center space-x-2">
-                  <div className="w-7 h-7 bg-gradient-to-r from-primary to-neon-purple rounded-full flex items-center justify-center">
-                    <span className="text-primary-foreground text-xs font-medium">
-                      {user.username?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-foreground text-xs font-medium">
-                      {user.username}
-                    </span>
-                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                      <span className="text-primary font-medium">{user.credits || 0}</span>
-                      <span>credits</span>
-                    </div>
-                  </div>
-                </div>
                 <Button
                   onClick={() => setLocation("/dashboard")}
                   variant="ghost"
@@ -136,41 +127,108 @@ export function Navigation() {
                 >
                   Dashboard
                 </Button>
-                {((user as any).isAdmin || user.email === "agrawalmayank200228@gmail.com") && (
-                  <Button
-                    onClick={() => setLocation("/admin")}
-                    variant="ghost"
-                    className="text-red-400 hover:text-red-300 transition-colors duration-200"
-                    data-testid="button-admin"
-                  >
-                    Admin
-                  </Button>
-                )}
-                {canImpersonate && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setSwitchUserOpen(true)}
-                        variant="ghost"
-                        size="icon"
-                        className="text-orange-400 hover:text-orange-300 transition-colors duration-200"
-                        data-testid="button-switch-user"
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="text-muted-foreground hover:text-foreground transition-colors duration-200 flex items-center gap-1 relative"
+                    >
+                      <Globe className="w-4 h-4" />
+                      Social <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
+                      {counts && counts.total > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-background">
+                          {counts.total}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-popover border-border min-w-[160px]">
+                    <DropdownMenuItem
+                      onClick={() => setLocation("/network")}
+                      className="cursor-pointer flex items-center justify-between text-popover-foreground hover:text-primary"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4" /> Network
+                      </div>
+                      {counts && counts.pendingConnections > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                          {counts.pendingConnections}
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setLocation("/chat")}
+                      className="cursor-pointer flex items-center justify-between text-popover-foreground hover:text-primary"
+                    >
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" /> Messages
+                      </div>
+                      {counts && counts.unreadMessages > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                          {counts.unreadMessages}
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center space-x-2 bg-card border border-border rounded-lg px-3 py-1.5 hover:bg-accent transition-colors">
+                      <div className="w-7 h-7 bg-gradient-to-r from-primary to-neon-purple rounded-full flex items-center justify-center">
+                        <span className="text-primary-foreground text-xs font-medium">
+                          {user.username?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex flex-col text-left">
+                        <span className="text-foreground text-xs font-medium">
+                          {user.username}
+                        </span>
+                        <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                          <span className="text-primary font-medium">{user.credits || 0}</span>
+                          <span>credits</span>
+                          <ChevronDown className="w-3 h-3 opacity-50 ml-1" />
+                        </div>
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-popover border-border min-w-[200px]">
+                    <DropdownMenuItem
+                      onClick={() => setLocation("/profile")}
+                      className="cursor-pointer flex items-center gap-2 text-popover-foreground hover:text-primary"
+                    >
+                      <User className="w-4 h-4" /> Profile
+                    </DropdownMenuItem>
+
+                    {((user as any).isAdmin || user.email === "agrawalmayank200228@gmail.com") && (
+                      <DropdownMenuItem
+                        onClick={() => setLocation("/admin")}
+                        className="cursor-pointer flex items-center gap-2 text-red-400 hover:text-red-300"
                       >
-                        <UserCog className="w-5 h-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Switch User (Impersonate)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                <Button
-                  onClick={handleLogout}
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-                >
-                  Sign Out
-                </Button>
+                        <UserCog className="w-4 h-4" /> Admin Panel
+                      </DropdownMenuItem>
+                    )}
+
+                    {canImpersonate && (
+                      <DropdownMenuItem
+                        onClick={() => setSwitchUserOpen(true)}
+                        className="cursor-pointer flex items-center gap-2 text-orange-400 hover:text-orange-300"
+                      >
+                        <UserCog className="w-4 h-4" /> Switch User
+                      </DropdownMenuItem>
+                    )}
+
+                    <div className="h-[1px] bg-border my-1" />
+
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="cursor-pointer flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-destructive/10"
+                    >
+                      <Rocket className="w-4 h-4 rotate-180" /> Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>
@@ -303,6 +361,41 @@ export function Navigation() {
                     className="w-full justify-start text-muted-foreground hover:text-foreground"
                   >
                     Dashboard
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setLocation("/profile");
+                      setMobileMenuOpen(false);
+                    }}
+                    variant="ghost"
+                    className="w-full justify-start text-muted-foreground hover:text-foreground"
+                  >
+                    Profile
+                  </Button>
+                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Social
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setLocation("/network");
+                      setMobileMenuOpen(false);
+                    }}
+                    variant="ghost"
+                    className="w-full justify-start text-muted-foreground hover:text-foreground pl-6"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Network
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setLocation("/chat");
+                      setMobileMenuOpen(false);
+                    }}
+                    variant="ghost"
+                    className="w-full justify-start text-muted-foreground hover:text-foreground pl-6"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Messages
                   </Button>
                   <Button
                     onClick={() => {

@@ -110,6 +110,31 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async createGitHubUser(profile: any): Promise<User> {
+    const email = profile.emails?.[0]?.value || `${profile.username}@github.com`;
+    const baseUsername = profile.username || email.split("@")[0];
+    let username = baseUsername;
+    let counter = 1;
+
+    while (await this.getUserByUsername(username)) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+
+    const [user] = await db
+      .insert(users)
+      .values({
+        username,
+        email,
+        githubUsername: profile.username,
+        avatar: profile.photos?.[0]?.value,
+        provider: "github",
+        password: null,
+      })
+      .returning();
+    return user;
+  }
+
   async updateUserCredits(userId: number, credits: number): Promise<User> {
     const [user] = await db
       .update(users)

@@ -27,6 +27,96 @@ export const users = pgTable("users", {
   lastActiveAt: timestamp("last_active_at"), // Last activity timestamp
   resetToken: text("reset_token"), // For password reset links
   resetTokenExpiresAt: timestamp("reset_token_expires_at"), // Reset link expiration
+  githubAccessToken: text("github_access_token"), // GitHub OAuth token
+  githubUsername: text("github_username"), // GitHub username
+  // Profile fields
+  headline: text("headline"), // e.g. "Senior DevOps Engineer"
+  bio: text("bio"),
+  location: text("location"),
+  company: text("company"),
+  role: text("role"),
+  skills: jsonb("skills"), // ["Docker", "AWS", "Kubernetes"]
+  experience: jsonb("experience"), // [{company, role, from, to}]
+  userProjects: jsonb("user_projects"), // [{name, description, url}]
+  socialLinks: jsonb("social_links"), // {linkedin, github, twitter, website}
+  profileCompleted: boolean("profile_completed").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// User connections (LinkedIn-style)
+export const connections = pgTable("connections", {
+  id: serial("id").primaryKey(),
+  requesterId: integer("requester_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  receiverId: integer("receiver_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").default("pending").notNull(), // pending, accepted, declined
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Stories (Expired after 24h)
+export const stories = pgTable("stories", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  mediaUrl: text("media_url").notNull(), // Base64 or URL
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+// User Posts (Instagram-style)
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content"),
+  mediaUrl: text("media_url"), // Base64 or URL
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Post Likes
+export const postLikes = pgTable("post_likes", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Post Comments
+export const postComments = pgTable("post_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Chat conversations
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  user1Id: integer("user1_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  user2Id: integer("user2_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  lastMessageAt: timestamp("last_message_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Chat messages
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  senderId: integer("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Security scan results from GitHub repo analysis
+export const securityScans = pgTable("security_scans", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  repoName: text("repo_name").notNull(),
+  repoUrl: text("repo_url").notNull(),
+  score: integer("score"), // 0-100 security score
+  findings: jsonb("findings"), // Array of security issues
+  summary: text("summary"),
+  status: text("status").default("pending").notNull(), // pending, scanning, complete, failed
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -190,6 +280,46 @@ export const usersRelations = relations(users, ({ many }) => ({
   adminActivityLogs: many(adminActivityLog),
   incidents: many(incidents),
   incidentMessages: many(incidentMessages),
+  stories: many(stories),
+  posts: many(posts),
+}));
+
+export const storiesRelations = relations(stories, ({ one }) => ({
+  user: one(users, {
+    fields: [stories.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [posts.userId],
+    references: [users.id],
+  }),
+  likes: many(postLikes),
+  comments: many(postComments),
+}));
+
+export const postLikesRelations = relations(postLikes, ({ one }) => ({
+  post: one(posts, {
+    fields: [postLikes.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postCommentsRelations = relations(postComments, ({ one }) => ({
+  post: one(posts, {
+    fields: [postComments.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postComments.userId],
+    references: [users.id],
+  }),
 }));
 
 export const domainConfigsRelations = relations(domainConfigs, ({ one }) => ({
@@ -357,6 +487,24 @@ export const insertIncidentMessageSchema = createInsertSchema(incidentMessages).
   message: true,
 });
 
+export const insertStorySchema = createInsertSchema(stories).pick({
+  userId: true,
+  mediaUrl: true,
+  expiresAt: true,
+});
+
+export const insertPostSchema = createInsertSchema(posts).pick({
+  userId: true,
+  content: true,
+  mediaUrl: true,
+});
+
+export const insertPostCommentSchema = createInsertSchema(postComments).pick({
+  postId: true,
+  userId: true,
+  content: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -380,3 +528,11 @@ export type Incident = typeof incidents.$inferSelect;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type IncidentMessage = typeof incidentMessages.$inferSelect;
 export type InsertIncidentMessage = z.infer<typeof insertIncidentMessageSchema>;
+export type SecurityScan = typeof securityScans.$inferSelect;
+export type Connection = typeof connections.$inferSelect;
+export type Conversation = typeof conversations.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type Story = typeof stories.$inferSelect;
+export type Post = typeof posts.$inferSelect;
+export type PostLike = typeof postLikes.$inferSelect;
+export type PostComment = typeof postComments.$inferSelect;
